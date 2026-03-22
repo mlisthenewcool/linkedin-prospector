@@ -30,7 +30,7 @@ slow_mo = 50  # ms entre chaque action Playwright
 database = "data/prospector.db"
 session_state = "data/session/state.json"
 log_file = "logs/prospector.log"
-templates_dir = "message_templates"
+templates_dir = "config/templates"
 
 # [user]
 # Facultatif — auto-détecté depuis LinkedIn au login.

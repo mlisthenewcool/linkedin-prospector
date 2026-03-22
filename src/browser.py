@@ -6,7 +6,7 @@ import random
 from datetime import UTC, datetime
 
 import structlog
-from playwright.async_api import Browser, BrowserContext, Page, async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, ViewportSize, async_playwright
 from playwright_stealth import Stealth
 
 from src.config import Config
@@ -55,7 +55,7 @@ class BrowserManager:
 
         self._context = await self._browser.new_context(
             storage_state=storage_state,
-            viewport={"width": width, "height": height},
+            viewport=ViewportSize(width=width, height=height),
             user_agent=(
                 "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                 "(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
@@ -68,11 +68,10 @@ class BrowserManager:
         self._page = await self._context.new_page()
 
         logger.info(
-            "Navigateur lancé (session: %s, viewport: %dx%d, max: %dmin)",
-            "restaurée" if storage_state else "nouvelle",
-            width,
-            height,
-            self._max_session_minutes,
+            "Navigateur lancé",
+            session="restaurée" if storage_state else "nouvelle",
+            viewport=f"{width}x{height}",
+            max_minutes=self._max_session_minutes,
         )
         return self._page
 
@@ -89,28 +88,16 @@ class BrowserManager:
         if self._context:
             session_path = self.config.paths.session_state
             await self._context.storage_state(path=str(session_path))
-            logger.info("Session sauvegardée : %s", session_path)
+            logger.info("Session sauvegardée", path=str(session_path))
 
     async def close(self) -> None:
         """Ferme proprement le navigateur en sauvegardant la session."""
         try:
             await self.save_session()
         except Exception as e:
-            logger.warning("Erreur sauvegarde session : %s", e)
+            logger.warning("Erreur sauvegarde session", error=str(e))
         if self._browser:
             await self._browser.close()
         if self._playwright:
             await self._playwright.stop()
         logger.info("Navigateur fermé")
-
-    @property
-    def page(self) -> Page:
-        if not self._page:
-            raise RuntimeError("Le navigateur n'est pas démarré. Appelez start() d'abord.")
-        return self._page
-
-    @property
-    def context(self) -> BrowserContext:
-        if not self._context:
-            raise RuntimeError("Le navigateur n'est pas démarré.")
-        return self._context

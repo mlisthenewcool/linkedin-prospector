@@ -6,7 +6,9 @@ Approche hybride :
     manuels et les réponses du prospect, en filtrant les notifications système.
 
 Logique :
-  (1) Pas dans le réseau (pas 1er degré) → NEW
+  (1) Pas dans le réseau (pas 1er degré) :
+      - Invitation en attente détectée     → CONNECTION_SENT
+      - Sinon                              → NEW
   (2) Dans le réseau (1er degré) :
       - Réponse du prospect détectée       → REPLIED
       - On a messagé (DB ou conversation)  → MESSAGED / FOLLOWED_UP
@@ -45,9 +47,14 @@ async def sync_prospect(
     pid = prospect.require_id()
     connection = info.get("connection_degree") or ""
 
-    # (1) Pas dans le réseau → NEW
+    # (1) Pas dans le réseau
     if connection != "1er":
-        if prospect.status != ProspectStatus.NEW:
+        pending = info.get("pending_invitation") is not None
+        if pending:
+            if prospect.status != ProspectStatus.CONNECTION_SENT:
+                db.update_prospect_status(pid, ProspectStatus.CONNECTION_SENT)
+                return ProspectStatus.CONNECTION_SENT.value
+        elif prospect.status != ProspectStatus.NEW:
             db.update_prospect_status(pid, ProspectStatus.NEW)
             return ProspectStatus.NEW.value
         return None
@@ -63,16 +70,16 @@ async def sync_prospect(
     prospect_replied = False
     if await open_message_dialog(page, prospect):
         our_groups, prospect_replied = await scan_conversation(page, prospect, config)
-        await close_message_dialog(page)
+        await close_message_dialog()
 
     # Déterminer si on a messagé (outil OU manuellement)
     we_messaged = has_message or has_followup
     if not we_messaged and our_groups > 0:
         we_messaged = True
         logger.info(
-            "Message manuel détecté pour %s (%d groupe(s))",
-            prospect.display_name,
-            our_groups,
+            "Message manuel détecté",
+            prospect=prospect.display_name,
+            groups=our_groups,
         )
 
     # Résoudre le statut

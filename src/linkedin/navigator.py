@@ -5,7 +5,6 @@ from __future__ import annotations
 import structlog
 from playwright.async_api import Page
 
-from src.config import Config
 from src.safety.human_behavior import human_scroll, random_mouse_move, simulate_reading
 
 logger = structlog.get_logger()
@@ -19,7 +18,7 @@ async def check_for_restriction(page: Page) -> bool:
     """
     url = page.url
     if any(pattern in url for pattern in ("/checkpoint/", "/checkpoint?", "/authwall")):
-        logger.error("Page de restriction LinkedIn détectée : %s", url)
+        logger.error("Page de restriction LinkedIn détectée", url=url)
         return True
 
     restriction_indicators = page.locator(
@@ -35,24 +34,42 @@ async def check_for_restriction(page: Page) -> bool:
     return False
 
 
+class NavigationResult:
+    """Résultat de la navigation vers un profil."""
+
+    __slots__ = ("invalid_profile", "ok")
+
+    def __init__(self, *, ok: bool, invalid_profile: bool = False) -> None:
+        self.ok = ok
+        self.invalid_profile = invalid_profile
+
+
+NAV_OK = NavigationResult(ok=True)
+NAV_TEMP_ERROR = NavigationResult(ok=False, invalid_profile=False)
+NAV_INVALID = NavigationResult(ok=False, invalid_profile=True)
+
+
 async def navigate_to_profile(
-    page: Page, linkedin_url: str, config: Config, *, light: bool = False
-) -> bool:
+    page: Page, linkedin_url: str, *, light: bool = False
+) -> NavigationResult:
     """Navigue vers un profil LinkedIn avec simulation humaine.
 
     Args:
         light: Si True, utilise des délais réduits (pour sync).
+
+    Returns:
+        NavigationResult avec ok=True si succès, invalid_profile=True si profil cassé/supprimé.
     """
     try:
-        logger.info("Navigation vers : %s", linkedin_url)
+        logger.debug("Navigation vers profil", url=linkedin_url)
         await page.goto(linkedin_url, wait_until="domcontentloaded", timeout=20_000)
 
         if await check_for_restriction(page):
-            return False
+            return NAV_TEMP_ERROR
 
         if "/in/" not in page.url:
-            logger.warning("URL inattendue après navigation : %s", page.url)
-            return False
+            logger.warning("Profil introuvable ou supprimé", url=linkedin_url, redirect=page.url)
+            return NAV_INVALID
 
         # Délais adaptés selon le mode
         read_time = (1.0, 2.0) if light else (2.0, 4.0)
@@ -66,27 +83,8 @@ async def navigate_to_profile(
         await human_scroll(page, "up")
         await simulate_reading(*end_time)
 
-        return True
+        return NAV_OK
 
     except Exception as e:
-        logger.error("Erreur navigation profil %s : %s", linkedin_url, e)
-        return False
-
-
-async def navigate_to_messaging(page: Page, config: Config) -> bool:
-    """Navigue vers la messagerie LinkedIn."""
-    try:
-        await page.goto(
-            f"{config.base_url}/messaging/",
-            wait_until="domcontentloaded",
-            timeout=15_000,
-        )
-
-        if await check_for_restriction(page):
-            return False
-
-        await simulate_reading(1.0, 2.0)
-        return True
-    except Exception as e:
-        logger.error("Erreur navigation messagerie : %s", e)
-        return False
+        logger.error("Erreur navigation profil (temporaire)", url=linkedin_url, error=str(e))
+        return NAV_TEMP_ERROR

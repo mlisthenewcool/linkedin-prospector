@@ -19,6 +19,7 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
         "about": None,
         "company": None,
         "connection_degree": None,
+        "pending_invitation": None,
     }
 
     try:
@@ -65,15 +66,26 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
             if match:
                 info["connection_degree"] = match.group(1)
 
+        # Invitation en attente
+        pending_el = page.locator(
+            "button:has-text('En attente'), "
+            "button:has-text('Pending'), "
+            "button[aria-label*='En attente'], "
+            "button[aria-label*='Pending'], "
+            "button:has-text('Retirer'), "
+            "button:has-text('Withdraw')"
+        )
+        if await pending_el.count() > 0:
+            info["pending_invitation"] = "true"
+
         logger.info(
-            "Profil parsé : %s %s — %s (%s)",
-            info["first_name"] or "",
-            info["last_name"] or "",
-            (info["headline"] or "")[:50],
-            info["connection_degree"] or "",
+            "Profil parsé",
+            name=f"{info['first_name'] or ''} {info['last_name'] or ''}".strip(),
+            degree=info["connection_degree"],
+            pending=info["pending_invitation"] is not None,
         )
 
     except Exception as e:
-        logger.error("Erreur parsing profil : %s", e)
+        logger.error("Erreur parsing profil", error=str(e))
 
     return info

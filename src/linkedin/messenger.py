@@ -36,7 +36,7 @@ async def send_first_message(
 
     # Vérifier en base si on a déjà envoyé un message via l'outil
     if db.has_action(pid, ActionType.MESSAGE):
-        logger.info("Message déjà envoyé à %s (en base) — skip", prospect.display_name)
+        logger.info("Message déjà envoyé — skip", prospect=prospect.display_name)
         db.update_prospect_status(pid, ProspectStatus.MESSAGED)
         return True
 
@@ -48,15 +48,15 @@ async def send_first_message(
         our_groups, prospect_replied = await scan_conversation(page, prospect, config)
 
         if prospect_replied:
-            logger.info("Réponse détectée de %s — marqué replied", prospect.display_name)
+            logger.info("Réponse détectée", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.REPLIED)
-            await close_message_dialog(page)
+            await close_message_dialog()
             return True
 
         if our_groups > 0:
-            logger.info("Message(s) déjà envoyé(s) à %s — skip", prospect.display_name)
+            logger.info("Message déjà envoyé — skip", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.MESSAGED)
-            await close_message_dialog(page)
+            await close_message_dialog()
             return True
 
         message = templates.render_first_message(
@@ -79,12 +79,12 @@ async def send_first_message(
         db.update_prospect_status(pid, ProspectStatus.MESSAGED)
         rate_limiter.record_action(ActionType.MESSAGE)
 
-        logger.info("Message envoyé à %s", prospect.display_name)
-        await close_message_dialog(page)
+        logger.info("Message envoyé", prospect=prospect.display_name)
+        await close_message_dialog()
         return True
 
     except Exception as e:
-        logger.error("Erreur envoi message à %s : %s", prospect.linkedin_url, e)
+        logger.error("Erreur envoi message", url=prospect.linkedin_url, error=str(e))
         db.log_action(
             Action(
                 prospect_id=pid,
@@ -118,9 +118,9 @@ async def send_followup(
         _our_groups, prospect_replied = await scan_conversation(page, prospect, config)
 
         if prospect_replied:
-            logger.info("Réponse détectée de %s — marqué replied", prospect.display_name)
+            logger.info("Réponse détectée", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.REPLIED)
-            await close_message_dialog(page)
+            await close_message_dialog()
             return True
 
         message = templates.render_followup(
@@ -141,12 +141,12 @@ async def send_followup(
         db.update_prospect_status(pid, ProspectStatus.FOLLOWED_UP)
         rate_limiter.record_action(ActionType.FOLLOWUP)
 
-        logger.info("Relance envoyée à %s", prospect.display_name)
-        await close_message_dialog(page)
+        logger.info("Relance envoyée", prospect=prospect.display_name)
+        await close_message_dialog()
         return True
 
     except Exception as e:
-        logger.error("Erreur relance à %s : %s", prospect.linkedin_url, e)
+        logger.error("Erreur relance", url=prospect.linkedin_url, error=str(e))
         db.log_action(
             Action(
                 prospect_id=pid,

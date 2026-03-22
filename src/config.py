@@ -5,9 +5,10 @@ from __future__ import annotations
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_CONFIG = PROJECT_ROOT / "config.toml"
+DEFAULT_CONFIG = PROJECT_ROOT / "config" / "config.toml"
 
 
 @dataclass(frozen=True)
@@ -63,10 +64,10 @@ class Config:
     user: UserConfig
 
 
-LINKEDIN_USER_FILE = PROJECT_ROOT / "data" / "linkedin_user.toml"
+LINKEDIN_USER_FILE = PROJECT_ROOT / "config" / "linkedin_user.toml"
 
 
-def _load_user_config(raw: dict) -> UserConfig:
+def _load_user_config(raw: dict[str, Any]) -> UserConfig:
     """Charge le user config : config.toml > linkedin_user.toml auto-détecté."""
     auto: dict[str, str] = {}
     if LINKEDIN_USER_FILE.exists():

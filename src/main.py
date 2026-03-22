@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import csv
-import logging
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Annotated
 
@@ -183,7 +181,7 @@ def sync(
                     try:
                         pid = prospect.require_id()
                     except ValueError:
-                        logger.warning("Prospect sans ID ignoré : %s", prospect.linkedin_url)
+                        logger.warning("Prospect sans ID ignoré", url=prospect.linkedin_url)
                         continue
 
                     if browser.session_expired:
@@ -195,10 +193,15 @@ def sync(
                         nl=False,
                     )
 
-                    if not await navigate_to_profile(
-                        page, prospect.linkedin_url, config, light=True
-                    ):
-                        typer.echo(" — erreur navigation")
+                    nav = await navigate_to_profile(page, prospect.linkedin_url, light=True)
+                    if nav.invalid_profile:
+                        db.update_prospect_status(pid, ProspectStatus.INVALID_PROFILE)
+                        db.mark_synced(pid)
+                        typer.echo(" → invalid_profile")
+                        changes["invalid_profile"] = changes.get("invalid_profile", 0) + 1
+                        continue
+                    if not nav.ok:
+                        typer.echo(" — erreur navigation (temporaire)")
                         continue
 
                     prospect, info = await enrich_prospect(page, prospect, db)
@@ -391,41 +394,17 @@ def setup_logging(config: Config) -> None:
     log_path = config.paths.log_file
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Stdlib handlers (structlog délègue le routage à stdlib)
-    root_logger = logging.getLogger()
-    if root_logger.handlers:
-        return
-    root_logger.setLevel(logging.INFO)
+    log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
 
-    file_handler = RotatingFileHandler(
-        str(log_path), maxBytes=5_000_000, backupCount=3, encoding="utf-8"
-    )
-    file_handler.setFormatter(
-        structlog.stdlib.ProcessorFormatter(
-            processors=[structlog.dev.ConsoleRenderer(colors=False)],
-        )
-    )
-    root_logger.addHandler(file_handler)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(
-        structlog.stdlib.ProcessorFormatter(
-            processors=[structlog.dev.ConsoleRenderer(colors=True)],
-        )
-    )
-    root_logger.addHandler(stream_handler)
-
-    # Configuration structlog
     structlog.configure(
         processors=[
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.dev.set_exc_info,
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+            structlog.dev.ConsoleRenderer(colors=False),
         ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
+        logger_factory=structlog.WriteLoggerFactory(file=log_file),
         cache_logger_on_first_use=True,
     )
 

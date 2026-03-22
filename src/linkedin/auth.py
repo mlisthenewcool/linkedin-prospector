@@ -37,11 +37,9 @@ async def manual_login(page: Page, config: Config) -> bool:
     logger.info("Ouverture de LinkedIn pour login manuel...")
     await page.goto(LOGIN_URL, wait_until="domcontentloaded")
 
-    print("\n" + "=" * 60)
-    print("  CONNEXION MANUELLE REQUISE")
-    print("  Connectez-vous dans le navigateur qui vient de s'ouvrir.")
-    print("  (Gérez le CAPTCHA si nécessaire)")
-    print("=" * 60 + "\n")
+    logger.info(
+        "Connexion manuelle requise — connectez-vous dans le navigateur (CAPTCHA si nécessaire)"
+    )
 
     try:
         await page.wait_for_url("**/feed/**", timeout=300_000)
@@ -71,9 +69,9 @@ async def _detect_linkedin_user(page: Page) -> None:
                     title = (await title_el.text_content() or "").strip()
 
                 save_linkedin_user(first_name, last_name, title)
-                logger.info("User LinkedIn détecté : %s %s — %s", first_name, last_name, title)
+                logger.info("User LinkedIn détecté", name=f"{first_name} {last_name}", title=title)
     except Exception as e:
-        logger.debug("Détection user LinkedIn échouée : %s", e)
+        logger.debug("Détection user LinkedIn échouée", error=str(e))
 
 
 async def is_session_valid(page: Page, config: Config) -> bool:
@@ -102,5 +100,5 @@ async def is_session_valid(page: Page, config: Config) -> bool:
         return False
 
     except Exception as e:
-        logger.error("Erreur validation session : %s", e)
+        logger.error("Erreur validation session", error=str(e))
         return False

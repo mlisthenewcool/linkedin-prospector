@@ -17,7 +17,7 @@ from src.database import Database
 from src.linkedin.auth import is_session_valid
 from src.linkedin.navigator import navigate_to_profile
 from src.linkedin.profile_parser import parse_profile
-from src.models import ActionType, Prospect
+from src.models import ActionType, Prospect, ProspectStatus
 from src.safety.human_behavior import maybe_visit_feed, random_delay
 from src.safety.rate_limiter import RateLimiter
 from src.templates import TemplateEngine
@@ -101,7 +101,7 @@ async def run_prospect_pipeline(
             try:
                 prospect.require_id()
             except ValueError:
-                logger.warning("Prospect sans ID ignoré : %s", prospect.linkedin_url)
+                logger.warning("Prospect sans ID ignoré", url=prospect.linkedin_url)
                 continue
 
             if browser.session_expired:
@@ -120,7 +120,12 @@ async def run_prospect_pipeline(
             typer.echo(f"[{i}/{len(prospects)}] {prospect.display_name} — {prospect.linkedin_url}")
 
             success = False
-            if await navigate_to_profile(page, prospect.linkedin_url, config):
+            nav = await navigate_to_profile(page, prospect.linkedin_url)
+            if nav.invalid_profile:
+                pid = prospect.require_id()
+                db.update_prospect_status(pid, ProspectStatus.INVALID_PROFILE)
+                typer.echo("  profil invalide")
+            elif nav.ok:
                 prospect, _ = await enrich_prospect(page, prospect, db)
                 if await action_fn(page, prospect, db, config, rate_limiter, templates):
                     sent += 1

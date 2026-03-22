@@ -34,9 +34,9 @@ class RateLimiter:
         """Vérifie si l'action est autorisée (limites journalières + session)."""
         if self.session_action_count >= self.config.limits.actions_per_session:
             logger.warning(
-                "Limite session atteinte (%d/%d)",
-                self.session_action_count,
-                self.config.limits.actions_per_session,
+                "Limite session atteinte",
+                current=self.session_action_count,
+                limit=self.config.limits.actions_per_session,
             )
             return False
 
@@ -46,10 +46,10 @@ class RateLimiter:
             current_count = self._get_daily_count(action_type)
             if current_count >= daily_limit:
                 logger.warning(
-                    "Limite journalière %s atteinte (%d/%d)",
-                    action_type.value,
-                    current_count,
-                    daily_limit,
+                    "Limite journalière atteinte",
+                    action=action_type.value,
+                    current=current_count,
+                    limit=daily_limit,
                 )
                 return False
 

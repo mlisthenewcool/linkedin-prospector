@@ -90,24 +90,6 @@ class Database:
 
     # --- Prospects ---
 
-    def upsert_prospect(self, prospect: Prospect) -> int:
-        """Insert ou update un prospect par linkedin_url."""
-        cursor = self.conn.execute(
-            _UPSERT_PROSPECT_SQL,
-            (
-                prospect.linkedin_url,
-                prospect.first_name,
-                prospect.last_name,
-                prospect.headline,
-                prospect.about,
-                prospect.company,
-                prospect.connection_degree,
-                prospect.status.value,
-            ),
-        )
-        self.conn.commit()
-        return cursor.lastrowid  # type: ignore[return-value]
-
     def upsert_prospects_batch(self, prospects: list[Prospect]) -> None:
         """Insert ou update une liste de prospects en une seule transaction."""
         with self.conn:
@@ -127,10 +109,6 @@ class Database:
                     for p in prospects
                 ],
             )
-
-    def get_prospect_by_url(self, url: str) -> Prospect | None:
-        row = self.conn.execute("SELECT * FROM prospects WHERE linkedin_url = ?", (url,)).fetchone()
-        return self._row_to_prospect(row) if row else None
 
     def get_prospects_by_status(
         self, status: ProspectStatus, limit: int | None = None
@@ -177,31 +155,23 @@ class Database:
         company: str | None = None,
         connection_degree: str | None = None,
     ) -> None:
-        updates = []
-        params: list = []
-        if first_name is not None:
-            updates.append("first_name = ?")
-            params.append(first_name)
-        if last_name is not None:
-            updates.append("last_name = ?")
-            params.append(last_name)
-        if headline is not None:
-            updates.append("headline = ?")
-            params.append(headline)
-        if about is not None:
-            updates.append("about = ?")
-            params.append(about)
-        if company is not None:
-            updates.append("company = ?")
-            params.append(company)
-        if connection_degree is not None:
-            updates.append("connection_degree = ?")
-            params.append(connection_degree)
-        if not updates:
+        fields = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "headline": headline,
+            "about": about,
+            "company": company,
+            "connection_degree": connection_degree,
+        }
+        to_update = {k: v for k, v in fields.items() if v is not None}
+        if not to_update:
             return
-        updates.append("updated_at = CURRENT_TIMESTAMP")
-        params.append(prospect_id)
-        self.conn.execute(f"UPDATE prospects SET {', '.join(updates)} WHERE id = ?", params)
+        set_clause = ", ".join(f"{k} = ?" for k in to_update)
+        params = [*to_update.values(), prospect_id]
+        self.conn.execute(
+            f"UPDATE prospects SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            params,
+        )
         self.conn.commit()
 
     def get_all_prospects(self) -> list[Prospect]:

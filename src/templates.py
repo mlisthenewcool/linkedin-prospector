@@ -32,7 +32,7 @@ class TemplateEngine:
 
         template = self.env.get_template(template_name)
         rendered = template.render(**context).strip()
-        logger.debug("Template '%s' rendu (%d chars)", template_name, len(rendered))
+        logger.debug("Template rendu", template=template_name, chars=len(rendered))
         return rendered
 
     def render_first_message(

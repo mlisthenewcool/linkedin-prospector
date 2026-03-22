@@ -59,7 +59,7 @@ def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
         for row in reader:
             url = row.get(url_col, "").strip()
             if not url or "linkedin.com" not in url:
-                logger.warning("URL invalide ignorée : %s", url)
+                logger.warning("URL invalide ignorée", url=url)
                 skipped += 1
                 continue
 
@@ -79,7 +79,7 @@ def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
     unique_urls = set(urls)
     duplicates = len(urls) - len(unique_urls)
     if duplicates:
-        logger.warning("%d URLs en double dans le CSV (seront fusionnées)", duplicates)
+        logger.warning("URLs en double dans le CSV", count=duplicates)
 
     existing = {p.linkedin_url for p in db.get_all_prospects() if p.linkedin_url in unique_urls}
     new_count = len(unique_urls - existing)
@@ -88,8 +88,8 @@ def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
     db.upsert_prospects_batch(prospects_to_import)
 
     if updated_count:
-        logger.info("%d prospects déjà en base (mis à jour)", updated_count)
-    logger.info("%d nouveaux prospects importés", new_count)
+        logger.info("Prospects mis à jour", count=updated_count)
+    logger.info("Import terminé", nouveaux=new_count)
 
     return new_count, skipped
 

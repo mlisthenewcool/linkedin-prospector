@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+from typing import Literal
 
 import structlog
 from playwright.async_api import Page
@@ -16,32 +17,13 @@ logger = structlog.get_logger()
 async def random_delay(config: Config) -> None:
     """Attend un délai aléatoire entre les actions."""
     delay = random.uniform(config.delays.min_delay, config.delays.max_delay)
-    logger.debug("Délai aléatoire : %.1fs", delay)
+    logger.debug("Délai aléatoire", seconds=round(delay, 1))
     await asyncio.sleep(delay)
 
 
 async def short_delay(min_s: float = 1.0, max_s: float = 3.0) -> None:
     """Petit délai entre sous-actions."""
     await asyncio.sleep(random.uniform(min_s, max_s))
-
-
-async def human_type(page: Page, selector: str, text: str, config: Config) -> None:
-    """Tape du texte caractère par caractère avec des délais humains."""
-    element = page.locator(selector)
-    await element.click()
-    await short_delay(0.3, 0.8)
-
-    for char in text:
-        await element.press_sequentially(char, delay=0)
-        delay_ms = random.randint(
-            config.typing.min_char_delay_ms,
-            config.typing.max_char_delay_ms,
-        )
-        await asyncio.sleep(delay_ms / 1000)
-
-        # Pause plus longue de temps en temps (comme un humain qui réfléchit)
-        if random.random() < 0.05:
-            await asyncio.sleep(random.uniform(0.5, 1.5))
 
 
 async def human_type_in_focused(page: Page, text: str, config: Config) -> None:
@@ -58,7 +40,7 @@ async def human_type_in_focused(page: Page, text: str, config: Config) -> None:
             await asyncio.sleep(random.uniform(0.5, 1.5))
 
 
-async def human_scroll(page: Page, direction: str = "down") -> None:
+async def human_scroll(page: Page, direction: Literal["up", "down"] = "down") -> None:
     """Scroll naturel avec variation et parfois retour en arrière."""
     steps = random.randint(2, 5)
 
@@ -104,4 +86,4 @@ async def maybe_visit_feed(page: Page, config: Config, probability: float = 0.1)
         await human_scroll(page, "down")
         await simulate_reading(1.0, 3.0)
     except Exception as e:
-        logger.debug("Erreur visite feed (bruit) : %s", e)
+        logger.debug("Erreur visite feed", error=str(e))

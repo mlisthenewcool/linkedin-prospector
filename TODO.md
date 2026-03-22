@@ -1,24 +1,35 @@
-1) config
-- limits : commencer plus bas
-- est-ce qu'on ne devrait pas déplacer dans src/
+<!-- ===== Conventions de formatage =====
+ - Sections       : Maintenant / Ensuite / Plus tard / Terminé
+ - Format ouvert  : - [ ] [Domaine] Description (forme impérative)
+ - Format terminé : - [x] [Domaine] _(YYYY-MM-DD)_ Description
+ - Tri ouvert     : alphabétique par domaine, puis par description
+ - Tri terminé    : date décroissante (plus récent en premier)
+ ===== -->
 
-2) .gitignore plus complet
+# TODO
 
-3) prospects.csv & prospects_pylote.csv -> data
+## Maintenant
 
-4) logs : ajouter structlog + améliorer les messages
+- [ ] [Config] Baisser les limits par défaut
+- [ ] [Tooling] Comparer prek.toml avec celui de l'autre projet
 
-5) prek : comparer avec celui de l'autre projet
+## Ensuite
 
-[done, mais à modifier] 6) mets à jour tous les models
-- si une valeur peut-être nulle, utilise None, pas une chaine de caractères vide
-- idéalement, utilise des dataclass frozen+slot=True si c'est mieux et pertinent pour l'usage, sinon, pydantic a t il une valeur ajoutée supplémentaire ? normalement si les données ne sont pas des input utilisateur, dataclass suffit vs pydantic non ?
-[todo] pourquoi ne pas retirer la possibilité du None ? au départ OK on a pas toutes les infos, mais après un sync on doit toutes les avoir. ce n'est qu'à l'import que c'est toléré
+- [ ] [CSV] Vérifier que l'import fonctionne sans nom d'entreprise
+- [ ] [CLI] Ajouter la recherche de recruteurs par nom d'entreprise (paramètre)
 
-7) actuellement, fonctionne avec un fichier .csv importé qui a le lien linkedin du profil + un nom d'entreprise.
-- est-ce que ça fonctionnerait sans le nom d'entreprise ?
-- est-ce qu'il serait possible de chercher des recruteurs qui travaillent pour une entreprise dont on fournirait le nom comme paramètre ?
+## Plus tard
 
-8) idéalement j'aimerais avoir deux types de prospection :
-- une prospection "froide" à qui on envoie un type de message générique car on a pas trouvé d'offres d'emploi de l'entreprise pour laquelle travaille le prospect
-- une prospection "ciblée" : je vais remplir dans un csv le nom de l'entreprise ainsi que l'url d'une offre de mission / d'emploi que j'ai vu et qui correspond à mes attentes/compétences ; il faudrait pouvoir fournir ce csv qui permette d'ajouter les recruteurs de cette entreprise et de les tagger spécifiquement pour être ensuite en mesure de leurs envoyer un message plus ciblé, qui comprenne l'offre d'emploi vue
+- [ ] [Prospection] Implémenter la prospection "froide" (message générique, pas d'offre trouvée)
+- [ ] [Prospection] Implémenter la prospection "ciblée" (CSV entreprise + URL offre, tagging recruteurs, message personnalisé)
+
+## Terminé
+
+- [x] [Models] _(2026-03-22)_ Adopter None au lieu de chaînes vides pour les valeurs nullables
+- [x] [Models] _(2026-03-22)_ Ajouter require_id() et display_name sur Prospect
+- [x] [Models] _(2026-03-22)_ Passer les dataclass en frozen=True, slots=True
+- [x] [Models] _(2026-03-22)_ Analyser le retrait de None après sync (conclusion : about/company/headline légitimement None)
+- [x] [Logs] _(2026-03-22)_ Migrer logging vers structlog
+- [x] [Projet] _(2026-03-22)_ Regrouper config, templates et linkedin_user.toml dans config/
+- [x] [Projet] _(2026-03-22)_ Déplacer les CSV d'import dans examples/
+- [x] [Git] _(2026-03-22)_ Compléter le .gitignore

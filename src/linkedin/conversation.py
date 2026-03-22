@@ -37,11 +37,11 @@ async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
     """
     urn = await _extract_profile_urn(page)
     if not urn:
-        logger.warning("URN introuvable pour %s", prospect.linkedin_url)
+        logger.warning("URN introuvable", url=prospect.linkedin_url)
         return False
 
     url = f"https://www.linkedin.com/messaging/thread/new/?recipient={urn}"
-    logger.info("Navigation vers la conversation : %s", prospect.first_name)
+    logger.debug("Ouverture conversation", prospect=prospect.display_name)
     await page.goto(url, wait_until="domcontentloaded", timeout=15_000)
     await short_delay(2.0, 4.0)
 
@@ -50,13 +50,13 @@ async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
         "div[role='textbox'][contenteditable='true'], div.msg-form__contenteditable"
     ).first
     if await msg_box.count() == 0:
-        logger.warning("Zone de message non trouvée pour %s", prospect.linkedin_url)
+        logger.warning("Zone de message non trouvée", url=prospect.linkedin_url)
         return False
 
     return True
 
 
-async def close_message_dialog(page: Page) -> None:
+async def close_message_dialog() -> None:
     """No-op — sur la page de messagerie, pas d'overlay à fermer.
 
     On naviguera vers le prochain profil directement.
@@ -103,7 +103,7 @@ async def scan_conversation(page: Page, prospect: Prospect, config: Config) -> t
     Returns:
         (our_message_groups, prospect_replied)
     """
-    user_name = (config.user.first_name or "").lower()
+    user_name = config.user.first_name.lower()
     prospect_name = (prospect.first_name or "").lower()
 
     groups = page.locator("li.msg-s-message-list__event")
@@ -119,7 +119,7 @@ async def scan_conversation(page: Page, prospect: Prospect, config: Config) -> t
             continue  # Notification système ou élément non-message
 
         sender = (await sender_el.text_content() or "").strip().lower()
-        logger.debug("  événement %d — expéditeur: '%s'", idx + 1, sender)
+        logger.debug("Événement conversation", index=idx + 1, sender=sender)
 
         if user_name and (user_name in sender or sender in ("vous", "you")):
             our_groups += 1
@@ -127,11 +127,11 @@ async def scan_conversation(page: Page, prospect: Prospect, config: Config) -> t
             prospect_replied = True
 
     logger.info(
-        "Conversation avec %s : %d événement(s), nous=%d, réponse=%s",
-        prospect.first_name,
-        group_count,
-        our_groups,
-        prospect_replied,
+        "Conversation scannée",
+        prospect=prospect.display_name,
+        events=group_count,
+        our_messages=our_groups,
+        replied=prospect_replied,
     )
 
     return our_groups, prospect_replied

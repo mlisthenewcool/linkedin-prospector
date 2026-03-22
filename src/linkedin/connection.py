@@ -19,9 +19,9 @@ async def send_connection_request(
     page: Page,
     prospect: Prospect,
     db: Database,
-    config: Config,
+    _config: Config,
     rate_limiter: RateLimiter,
-    templates: TemplateEngine,
+    _templates: TemplateEngine,
 ) -> bool:
     """Envoie une demande de connexion sans note à un prospect."""
     pid = prospect.require_id()
@@ -52,8 +52,8 @@ async def send_connection_request(
 
         if await connect_btn.count() == 0:
             logger.info(
-                "Bouton connexion absent pour %s — peut-être déjà connecté",
-                prospect.linkedin_url,
+                "Bouton connexion absent — peut-être déjà connecté",
+                url=prospect.linkedin_url,
             )
             db.update_prospect_status(pid, ProspectStatus.CONNECTED)
             return True
@@ -81,14 +81,14 @@ async def send_connection_request(
             db.update_prospect_status(pid, ProspectStatus.CONNECTION_SENT)
             rate_limiter.record_action(ActionType.INVITATION)
 
-            logger.info("Invitation envoyée à %s", prospect.display_name)
+            logger.info("Invitation envoyée", prospect=prospect.display_name)
             return True
 
-        logger.warning("Bouton Envoyer non trouvé pour %s", prospect.linkedin_url)
+        logger.warning("Bouton Envoyer non trouvé", url=prospect.linkedin_url)
         return False
 
     except Exception as e:
-        logger.error("Erreur envoi invitation à %s : %s", prospect.linkedin_url, e)
+        logger.error("Erreur envoi invitation", url=prospect.linkedin_url, error=str(e))
         db.log_action(
             Action(
                 prospect_id=pid,

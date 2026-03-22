@@ -14,13 +14,13 @@ class ProspectStatus(StrEnum):
     MESSAGED = "messaged"
     FOLLOWED_UP = "followed_up"
     REPLIED = "replied"
+    INVALID_PROFILE = "invalid_profile"
 
 
 class ActionType(StrEnum):
     INVITATION = "invitation"
     MESSAGE = "message"
     FOLLOWUP = "followup"
-    PROFILE_VISIT = "profile_visit"
 
 
 @dataclass(frozen=True, slots=True)
