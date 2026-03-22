@@ -1,0 +1,40 @@
+[linkedin]
+# URL de base LinkedIn
+base_url = "https://www.linkedin.com"
+
+[limits]
+# Limites journalières
+invitations_per_day = 30
+messages_per_day = 30
+followups_per_day = 30
+actions_per_session = 40
+
+[delays]
+# Délais entre actions (en secondes)
+min_delay = 30
+max_delay = 120
+
+# Délai avant relance (en jours)
+followup_after_days = 5
+
+[typing]
+# Simulation de frappe humaine (en ms)
+min_char_delay_ms = 50
+max_char_delay_ms = 200
+
+[browser]
+headless = false
+slow_mo = 50  # ms entre chaque action Playwright
+
+[paths]
+database = "data/prospector.db"
+session_state = "data/session/state.json"
+log_file = "logs/prospector.log"
+templates_dir = "message_templates"
+
+# [user]
+# Facultatif — auto-détecté depuis LinkedIn au login.
+# Décommenter pour forcer des valeurs (prioritaire sur l'auto-détection) :
+# first_name = "Prénom"
+# last_name = "Nom"
+# title = "Mon titre"

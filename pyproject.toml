@@ -1,0 +1,69 @@
+[project]
+name = "automatisation-prospections"
+version = "0.1.0"
+description = "Automatisation de prospection LinkedIn pour recruteurs IT/Data"
+requires-python = ">=3.14"
+dependencies = [
+    "playwright>=1.40",
+    "playwright-stealth>=1.0.6",
+    "jinja2>=3.1",
+    "typer>=0.24.1",
+    "structlog>=25.5.0",
+]
+
+[project.scripts]
+prospect = "src.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.0",
+    "prek>=0.3.6",
+    "ruff>=0.15.6",
+    "ty>=0.0.23",
+]
+
+# --- Ruff ---
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff-specific
+    "S",     # flake8-bandit (security)
+    "ASYNC", # flake8-async
+]
+ignore = [
+    "S101",  # assert OK in tests
+    "S311",  # random OK for human behavior simulation, not crypto
+    "S608",  # dynamic SQL uses hardcoded column names, not user input
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+# --- ty ---
+[tool.ty.environment]
+python-version = "3.14"
+
+# --- Bandit ---
+[tool.bandit]
+targets = ["src"]
+skips = ["B101", "B311", "B608", "B701"]

@@ -1,0 +1,52 @@
+#:schema https://www.schemastore.org/prek.json
+
+[[repos]]
+repo = "builtin"
+hooks = [
+    { id = "trailing-whitespace" },
+    { id = "end-of-file-fixer" },
+    { id = "check-toml" },
+    { id = "check-yaml" },
+    { id = "check-added-large-files", args = ["--maxkb=500"] },
+]
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "ruff-check"
+name = "ruff check"
+entry = "uv run ruff check --fix"
+language = "system"
+types = ["python"]
+
+[[repos.hooks]]
+id = "ruff-format"
+name = "ruff format"
+entry = "uv run ruff format"
+language = "system"
+types = ["python"]
+
+[[repos.hooks]]
+id = "ty"
+name = "ty type check"
+entry = "uv run ty check"
+language = "system"
+types = ["python"]
+pass_filenames = false
+
+[[repos.hooks]]
+id = "bandit"
+name = "bandit security check"
+entry = "uv run bandit -c pyproject.toml"
+language = "system"
+types = ["python"]
+stages = ["pre-push"]
+
+[[repos.hooks]]
+id = "pip-audit"
+name = "pip-audit dependency check"
+entry = "uv run pip-audit"
+language = "system"
+pass_filenames = false
+stages = ["pre-push"]

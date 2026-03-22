@@ -1,0 +1,14 @@
+Bonjour {{ first_name }},
+
+Merci d'avoir accepté mon invitation !
+
+Je suis {{ user_first_name }} {{ user_last_name }}, {{ user_title }}. Je serais ravi d'échanger avec vous sur d'éventuelles opportunités de collaboration.
+
+{% if company %}
+J'ai vu que vous étiez chez {{ company }} — n'hésitez pas si vous avez des besoins en ce moment.
+{% endif %}
+
+Seriez-vous disponible pour un court échange cette semaine ?
+
+Bonne journée,
+{{ user_first_name }}
