@@ -8,7 +8,7 @@ from pathlib import Path
 import structlog
 
 from src.database import Database
-from src.models import Prospect
+from src.models import Prospect, ProspectStatus
 
 logger = structlog.get_logger()
 
@@ -19,6 +19,9 @@ COLUMN_MAP = {
     "last_name": ["last_name", "lastname", "nom", "last"],
     "headline": ["headline", "titre", "title", "poste"],
     "company": ["company", "entreprise", "société", "societe", "organization"],
+    "about": ["about", "infos", "description", "summary"],
+    "status": ["status", "statut"],
+    "connection_degree": ["connection_degree", "degree", "degré"],
 }
 
 
@@ -64,14 +67,34 @@ def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
                 continue
 
             url = _normalize_linkedin_url(url)
+            vals = {
+                f: row.get(col_map.get(f) or "", "").strip() or None
+                for f in (
+                    "first_name",
+                    "last_name",
+                    "headline",
+                    "company",
+                    "about",
+                    "connection_degree",
+                    "status",
+                )
+            }
+
+            try:
+                status = ProspectStatus(vals["status"]) if vals["status"] else ProspectStatus.NEW
+            except ValueError:
+                status = ProspectStatus.NEW
 
             prospects_to_import.append(
                 Prospect(
                     linkedin_url=url,
-                    first_name=row.get(col_map.get("first_name") or "", "").strip() or None,
-                    last_name=row.get(col_map.get("last_name") or "", "").strip() or None,
-                    headline=row.get(col_map.get("headline") or "", "").strip() or None,
-                    company=row.get(col_map.get("company") or "", "").strip() or None,
+                    first_name=vals["first_name"],
+                    last_name=vals["last_name"],
+                    headline=vals["headline"],
+                    company=vals["company"],
+                    about=vals["about"],
+                    connection_degree=vals["connection_degree"],
+                    status=status,
                 )
             )
 

@@ -66,7 +66,7 @@ def cmd_import(
 @app.command()
 def export(
     output: Annotated[Path, typer.Option("--output", "-o", help="Fichier de sortie")] = Path(
-        "export.csv"
+        "data/export.csv"
     ),
     status: Annotated[str | None, typer.Option(help="Filtrer par statut")] = None,
 ) -> None:
