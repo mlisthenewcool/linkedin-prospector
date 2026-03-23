@@ -1,13 +1,15 @@
-# Automatisation Prospection LinkedIn
+# LinkedIn Prospection Automation
 
-Outil CLI d'automatisation de prospection LinkedIn via Playwright. Import de prospects depuis CSV, envoi d'invitations, messages personnalisés et relances avec simulation de comportement humain.
+CLI tool for LinkedIn prospection automation via Playwright. Import prospects from CSV, send connection requests, personalized messages and follow-ups with human behavior simulation.
 
 ## Pipeline
 
 ```
 CSV → import → [new] → connect → [connection_sent] → sync → [connected] → message → [messaged] → followup → [followed_up]
                                                                                           ↓
-                                                                                      [replied] → sort du pipeline
+                                                                                      [replied] → exits pipeline
+
+Navigation errors → [invalid_profile] → excluded from future actions
 ```
 
 ## Installation
@@ -17,79 +19,121 @@ uv sync
 uv run playwright install chromium
 ```
 
-## Configuration (obligatoire)
+## Configuration
 
-Modifier `config.toml` :
+Edit `config/config.toml`:
 
 ```toml
-[user]
-# OBLIGATOIRE — doit correspondre exactement au nom affiché sur LinkedIn
-first_name = "Prénom"
-last_name = "Nom"
-title = "Votre titre"
+[limits]
+invitations_per_day = 30
+messages_per_day = 30
+followups_per_day = 30
+actions_per_session = 40
+
+[delays]
+min_delay = 30       # seconds between actions
+max_delay = 120
+followup_after_days = 5
+
+[browser]
+headless = false
+slow_mo = 50         # ms between each Playwright action
+
+# [user]
+# Optional — auto-detected from LinkedIn at login.
+# Uncomment to override:
+# first_name = "FirstName"
+# last_name = "LastName"
+# title = "My title"
 ```
 
-Les templates de messages dans `message_templates/` sont aussi obligatoires :
-- `connection_note.txt.j2` — note d'invitation (max 300 chars)
-- `first_message.txt.j2` — premier message de prospection
-- `follow_up.txt.j2` — message de relance
+Message templates in `config/templates/`:
+- `first_message.txt.j2` — first prospection message (Jinja2)
+- `follow_up.txt.j2` — follow-up message
 
-## Configuration (facultative)
+## Commands
 
-Dans `config.toml`, les valeurs par défaut conviennent pour la plupart des cas :
-
-| Section | Paramètre | Défaut | Description |
-|---------|-----------|--------|-------------|
-| `limits` | `invitations_per_day` | 30 | Limite quotidienne d'invitations |
-| `limits` | `messages_per_day` | 30 | Limite quotidienne de messages |
-| `limits` | `followups_per_day` | 30 | Limite quotidienne de relances |
-| `delays` | `min_delay` / `max_delay` | 30-120s | Délai aléatoire entre chaque action |
-| `delays` | `followup_after_days` | 5 | Jours avant relance |
-| `browser` | `headless` | false | Mode sans fenêtre |
-| `paths` | `database` | `data/prospector.db` | Chemin de la base SQLite |
-| `--config` | — | `config.toml` | Chemin alternatif via CLI |
-
-## Commandes
-
-### Obligatoires au premier lancement
+### First-time setup
 
 ```bash
-# 1. Se connecter à LinkedIn (ouvre un navigateur, login manuel)
-uv run python -m src.main login
+# 1. Log into LinkedIn (opens a browser, manual login)
+prospect login
 
-# 2. Importer des prospects depuis un CSV (colonnes : linkedin_url + optionnelles)
-uv run python -m src.main import --csv prospects.csv
+# 2. Import prospects from a CSV
+prospect import --csv data/prospects_example.csv
 ```
 
-### Commandes principales
+### Main commands
 
 ```bash
-# Synchroniser les statuts avec l'état réel LinkedIn (déjà connecté ? message envoyé ? réponse ?)
-uv run python -m src.main sync --limit 10
+# Sync statuses with actual LinkedIn state (connected? message sent? reply?)
+prospect sync --limit 10
 
-# Envoyer des invitations aux prospects "new"
-uv run python -m src.main connect --limit 5
+# Send connection requests to "new" prospects
+prospect connect --limit 5
 
-# Envoyer le premier message aux prospects "connected"
-uv run python -m src.main message --limit 5
+# Send first message to "connected" prospects
+prospect message --limit 5
 
-# Relancer les prospects "messaged" sans réponse
-uv run python -m src.main followup --limit 5
+# Follow up with "messaged" prospects who haven't replied
+prospect followup --limit 5
 ```
 
-### Consultation
+### Viewing data
 
 ```bash
-# Statistiques par statut + compteurs du jour
-uv run python -m src.main status
+# Statistics by status + daily counters
+prospect status
 
-# Lister les prospects (filtrage optionnel)
-uv run python -m src.main list --limit 20
-uv run python -m src.main list --status connected
+# List prospects (optional filtering)
+prospect list --limit 20
+prospect list --status connected
+
+# Export prospects to CSV
+prospect export --output export.csv
+prospect export --status replied --output replied.csv
 ```
 
-## Format CSV
+## CSV format
 
-Colonne obligatoire : `linkedin_url` (ou alias : `url`, `profile_url`, `linkedin`, `profile`)
+Required column: `linkedin_url` (aliases: `url`, `profile_url`, `linkedin`, `profile`)
 
-Colonnes optionnelles : `first_name`, `last_name`, `headline`, `company`
+Optional columns: `first_name`, `last_name`, `headline`, `company`
+
+An example file is available at `data/prospects_example.csv`.
+
+## Project structure
+
+```
+config/
+  config.toml              # Main configuration
+  linkedin_user.toml       # Auto-detected LinkedIn user (gitignored)
+  templates/               # Jinja2 message templates
+    first_message.txt.j2
+    follow_up.txt.j2
+data/                      # Runtime data (gitignored except example)
+  prospects_example.csv    # Example CSV with fake data
+  prospector.db            # SQLite database (auto-created)
+  session/state.json       # Browser session (auto-created)
+logs/                      # Log files (gitignored)
+src/
+  main.py                  # CLI entrypoint (typer)
+  config.py                # TOML config loader + path constants
+  database.py              # SQLite schema and CRUD
+  models.py                # Prospect, Action dataclasses
+  csv_importer.py          # CSV import logic
+  browser.py               # Playwright + stealth browser manager
+  templates.py             # Jinja2 template engine
+  workflow.py              # Pipeline orchestration
+  linkedin/
+    auth.py                # Login, session validation
+    navigator.py           # Profile navigation with human simulation
+    profile_parser.py      # Profile info extraction
+    connection.py          # Connection request sending
+    conversation.py        # Messaging: open, scan, send
+    messenger.py           # First message + follow-up logic
+    sync.py                # Status synchronization
+  safety/
+    human_behavior.py      # Delays, typing, scrolling, mouse, noise
+    rate_limiter.py        # Daily + session rate limiting
+```
