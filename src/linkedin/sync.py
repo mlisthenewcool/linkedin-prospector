@@ -23,7 +23,6 @@ from playwright.async_api import Page
 from src.config import Config
 from src.database import Database
 from src.linkedin.conversation import (
-    close_message_dialog,
     open_message_dialog,
     scan_conversation,
 )
@@ -70,7 +69,6 @@ async def sync_prospect(
     prospect_replied = False
     if await open_message_dialog(page, prospect):
         our_groups, prospect_replied = await scan_conversation(page, prospect, config)
-        await close_message_dialog()
 
     # Déterminer si on a messagé (outil OU manuellement)
     we_messaged = has_message or has_followup

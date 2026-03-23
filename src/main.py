@@ -11,7 +11,7 @@ import structlog
 import typer
 
 from src.browser import BrowserManager
-from src.config import Config, load_config
+from src.config import DB_PATH, LOG_PATH, Config, load_config
 from src.csv_importer import import_csv
 from src.database import Database
 from src.linkedin.auth import manual_login
@@ -40,9 +40,8 @@ def _config(ctx: typer.Context) -> Config:
     return ctx.ensure_object(Config)
 
 
-def _resolve_status(status: str | None) -> ProspectStatus | None:
-    if status is None:
-        return None
+def _resolve_status(status: str) -> ProspectStatus:
+    """Convertit un string en ProspectStatus ou exit avec erreur."""
     try:
         return ProspectStatus(status)
     except ValueError:
@@ -56,29 +55,27 @@ def _resolve_status(status: str | None) -> ProspectStatus | None:
 
 @app.command("import")
 def cmd_import(
-    ctx: typer.Context,
     csv_path: Annotated[Path, typer.Option("--csv", help="Chemin du CSV")],
 ) -> None:
     """Importer des prospects depuis un CSV."""
-    config = _config(ctx)
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         imported, skipped = import_csv(db, csv_path)
         typer.echo(f"\nImport terminé : {imported} prospects importés, {skipped} ignorés")
 
 
 @app.command()
 def export(
-    ctx: typer.Context,
     output: Annotated[Path, typer.Option("--output", "-o", help="Fichier de sortie")] = Path(
         "export.csv"
     ),
     status: Annotated[str | None, typer.Option(help="Filtrer par statut")] = None,
 ) -> None:
     """Exporter les prospects en CSV."""
-    config = _config(ctx)
-    with Database(config.paths.database) as db:
-        resolved = _resolve_status(status)
-        prospects = db.get_prospects_by_status(resolved) if resolved else db.get_all_prospects()
+    with Database(DB_PATH) as db:
+        if status:
+            prospects = db.get_prospects_by_status(_resolve_status(status))
+        else:
+            prospects = db.get_all_prospects()
 
         if not prospects:
             typer.echo("Aucun prospect à exporter")
@@ -154,11 +151,9 @@ def sync(
     """Synchroniser les statuts avec l'état réel LinkedIn."""
     config = _config(ctx)
 
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         if status:
             resolved = _resolve_status(status)
-            # resolved is guaranteed non-None here (Exit raised otherwise)
-            assert resolved is not None
             prospects = db.get_prospects_by_status(resolved, limit=limit)
         elif all_prospects:
             prospects = db.get_all_prospects()[:limit] if limit else db.get_all_prospects()
@@ -238,7 +233,7 @@ def connect(
     """Envoyer des invitations aux prospects 'new'."""
     config = _config(ctx)
 
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         rate_limiter = RateLimiter(db, config)
         remaining = rate_limiter.remaining(ActionType.INVITATION)
         effective_limit = min(limit or remaining, remaining)
@@ -269,7 +264,7 @@ def message(
     """Envoyer les premiers messages aux prospects 'connected'."""
     config = _config(ctx)
 
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         rate_limiter = RateLimiter(db, config)
         remaining = rate_limiter.remaining(ActionType.MESSAGE)
         effective_limit = min(limit or remaining, remaining)
@@ -300,7 +295,7 @@ def followup(
     """Envoyer des relances aux prospects 'messaged' sans réponse."""
     config = _config(ctx)
 
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         rate_limiter = RateLimiter(db, config)
         remaining = rate_limiter.remaining(ActionType.FOLLOWUP)
         effective_limit = min(limit or remaining, remaining)
@@ -327,16 +322,13 @@ def followup(
 
 @app.command("list")
 def cmd_list(
-    ctx: typer.Context,
     status: Annotated[str | None, typer.Option(help="Filtrer par statut")] = None,
     limit: Annotated[int, typer.Option(help="Nombre max à afficher")] = 20,
 ) -> None:
     """Lister les prospects."""
-    config = _config(ctx)
-    with Database(config.paths.database) as db:
-        resolved = _resolve_status(status)
-        if resolved:
-            prospects = db.get_prospects_by_status(resolved, limit=limit)
+    with Database(DB_PATH) as db:
+        if status:
+            prospects = db.get_prospects_by_status(_resolve_status(status), limit=limit)
         else:
             prospects = db.get_all_prospects()[:limit]
 
@@ -363,7 +355,7 @@ def cmd_list(
 def status(ctx: typer.Context) -> None:
     """Afficher les statistiques."""
     config = _config(ctx)
-    with Database(config.paths.database) as db:
+    with Database(DB_PATH) as db:
         counts = db.count_by_status()
         total = sum(counts.values())
 
@@ -390,11 +382,10 @@ def status(ctx: typer.Context) -> None:
 # --- Entrypoint ---
 
 
-def setup_logging(config: Config) -> None:
-    log_path = config.paths.log_file
-    log_path.parent.mkdir(parents=True, exist_ok=True)
+def setup_logging() -> None:
+    LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    log_file = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
+    log_file = open(LOG_PATH, "a", encoding="utf-8")  # noqa: SIM115
 
     structlog.configure(
         processors=[
@@ -416,7 +407,7 @@ def callback(
 ) -> None:
     """Automatisation de prospection LinkedIn."""
     loaded = load_config(config) if config else load_config()
-    setup_logging(loaded)
+    setup_logging()
     ctx.obj = loaded
 
 

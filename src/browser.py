@@ -9,7 +9,7 @@ import structlog
 from playwright.async_api import Browser, BrowserContext, Page, ViewportSize, async_playwright
 from playwright_stealth import Stealth
 
-from src.config import Config
+from src.config import SESSION_STATE_PATH, Config
 
 logger = structlog.get_logger()
 
@@ -29,7 +29,7 @@ class BrowserManager:
         self._started_at = datetime.now(UTC)
         self._playwright = await async_playwright().start()
 
-        session_path = self.config.paths.session_state
+        session_path = SESSION_STATE_PATH
         session_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Viewport randomisé pour éviter le fingerprinting
@@ -86,7 +86,7 @@ class BrowserManager:
     async def save_session(self) -> None:
         """Sauvegarde les cookies et le state du navigateur."""
         if self._context:
-            session_path = self.config.paths.session_state
+            session_path = SESSION_STATE_PATH
             await self._context.storage_state(path=str(session_path))
             logger.info("Session sauvegardée", path=str(session_path))
 

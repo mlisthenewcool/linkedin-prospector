@@ -10,6 +10,13 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "config.toml"
 
+# Chemins fixes (pas besoin de les configurer)
+DATA_DIR = PROJECT_ROOT / "data"
+DB_PATH = DATA_DIR / "prospector.db"
+SESSION_STATE_PATH = DATA_DIR / "session" / "state.json"
+LOG_PATH = PROJECT_ROOT / "logs" / "prospector.log"
+TEMPLATES_DIR = PROJECT_ROOT / "config" / "templates"
+
 
 @dataclass(frozen=True)
 class LimitsConfig:
@@ -39,14 +46,6 @@ class BrowserConfig:
 
 
 @dataclass(frozen=True)
-class PathsConfig:
-    database: Path
-    session_state: Path
-    log_file: Path
-    templates_dir: Path
-
-
-@dataclass(frozen=True)
 class UserConfig:
     first_name: str
     last_name: str
@@ -60,7 +59,6 @@ class Config:
     delays: DelaysConfig
     typing: TypingConfig
     browser: BrowserConfig
-    paths: PathsConfig
     user: UserConfig
 
 
@@ -93,11 +91,5 @@ def load_config(path: Path = DEFAULT_CONFIG) -> Config:
         delays=DelaysConfig(**raw["delays"]),
         typing=TypingConfig(**raw["typing"]),
         browser=BrowserConfig(**raw["browser"]),
-        paths=PathsConfig(
-            database=PROJECT_ROOT / raw["paths"]["database"],
-            session_state=PROJECT_ROOT / raw["paths"]["session_state"],
-            log_file=PROJECT_ROOT / raw["paths"]["log_file"],
-            templates_dir=PROJECT_ROOT / raw["paths"]["templates_dir"],
-        ),
         user=_load_user_config(raw),
     )

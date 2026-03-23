@@ -5,7 +5,7 @@ from __future__ import annotations
 import structlog
 from jinja2 import Environment, FileSystemLoader
 
-from src.config import Config
+from src.config import TEMPLATES_DIR, Config
 
 logger = structlog.get_logger()
 
@@ -13,7 +13,7 @@ logger = structlog.get_logger()
 class TemplateEngine:
     def __init__(self, config: Config) -> None:
         self.config = config
-        templates_dir = config.paths.templates_dir
+        templates_dir = TEMPLATES_DIR
         if not templates_dir.exists():
             raise FileNotFoundError(f"Dossier templates introuvable : {templates_dir}")
         self.env = Environment(

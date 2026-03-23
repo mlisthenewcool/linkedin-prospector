@@ -1,5 +1,6 @@
 # Runtime data
-data/
+data/*
+!data/prospects_example.csv
 logs/
 
 # Auto-generated config

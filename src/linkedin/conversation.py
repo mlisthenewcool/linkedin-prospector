@@ -56,13 +56,6 @@ async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
     return True
 
 
-async def close_message_dialog() -> None:
-    """No-op — sur la page de messagerie, pas d'overlay à fermer.
-
-    On naviguera vers le prochain profil directement.
-    """
-
-
 async def type_and_send_message(page: Page, message: str, config: Config) -> bool:
     """Tape un message caractère par caractère et l'envoie."""
     msg_box = page.locator(

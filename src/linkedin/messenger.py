@@ -8,7 +8,6 @@ from playwright.async_api import Page
 from src.config import Config
 from src.database import Database
 from src.linkedin.conversation import (
-    close_message_dialog,
     open_message_dialog,
     scan_conversation,
     type_and_send_message,
@@ -50,13 +49,13 @@ async def send_first_message(
         if prospect_replied:
             logger.info("Réponse détectée", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.REPLIED)
-            await close_message_dialog()
+
             return True
 
         if our_groups > 0:
             logger.info("Message déjà envoyé — skip", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.MESSAGED)
-            await close_message_dialog()
+
             return True
 
         message = templates.render_first_message(
@@ -80,7 +79,6 @@ async def send_first_message(
         rate_limiter.record_action(ActionType.MESSAGE)
 
         logger.info("Message envoyé", prospect=prospect.display_name)
-        await close_message_dialog()
         return True
 
     except Exception as e:
@@ -120,7 +118,7 @@ async def send_followup(
         if prospect_replied:
             logger.info("Réponse détectée", prospect=prospect.display_name)
             db.update_prospect_status(pid, ProspectStatus.REPLIED)
-            await close_message_dialog()
+
             return True
 
         message = templates.render_followup(
@@ -142,7 +140,6 @@ async def send_followup(
         rate_limiter.record_action(ActionType.FOLLOWUP)
 
         logger.info("Relance envoyée", prospect=prospect.display_name)
-        await close_message_dialog()
         return True
 
     except Exception as e:

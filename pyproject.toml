@@ -59,11 +59,9 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
 
-# --- ty ---
 [tool.ty.environment]
 python-version = "3.14"
 
-# --- Bandit ---
 [tool.bandit]
 targets = ["src"]
 skips = ["B101", "B311", "B608", "B701"]

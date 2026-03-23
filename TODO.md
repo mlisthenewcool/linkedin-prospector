@@ -10,7 +10,7 @@
 
 ## Maintenant
 
-- [ ] [Config] Baisser les limits par défaut
+- [ ] [Config] Baisser les limites par défaut
 - [ ] [Tooling] Comparer prek.toml avec celui de l'autre projet
 
 ## Ensuite
