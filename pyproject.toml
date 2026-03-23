@@ -4,11 +4,20 @@ version = "0.1.0"
 description = "Automatisation de prospection LinkedIn pour recruteurs IT/Data"
 requires-python = ">=3.14"
 dependencies = [
-    "playwright>=1.40",
-    "playwright-stealth>=1.0.6",
-    "jinja2>=3.1",
-    "typer>=0.24.1",
+    "jinja2>=3.1.6",
+    "playwright>=1.58.0",
+    "playwright-stealth>=2.0.2",
     "structlog>=25.5.0",
+    "typer>=0.24.1",
+]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.0",
+    "prek>=0.3.8",
+    "ruff>=0.15.7",
+    "ty>=0.0.24",
 ]
 
 [project.scripts]
@@ -21,16 +30,6 @@ packages = ["src"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[dependency-groups]
-dev = [
-    "bandit>=1.9.4",
-    "pip-audit>=2.10.0",
-    "prek>=0.3.6",
-    "ruff>=0.15.6",
-    "ty>=0.0.23",
-]
-
-# --- Ruff ---
 [tool.ruff]
 target-version = "py314"
 line-length = 100
