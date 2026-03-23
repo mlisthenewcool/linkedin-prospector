@@ -1,4 +1,4 @@
-"""Schema SQLite, CRUD et compteurs journaliers."""
+"""SQLite schema, CRUD operations and daily counters."""
 
 from __future__ import annotations
 
@@ -91,7 +91,7 @@ class Database:
     # --- Prospects ---
 
     def upsert_prospects_batch(self, prospects: list[Prospect]) -> None:
-        """Insert ou update une liste de prospects en une seule transaction."""
+        """Upsert a list of prospects in a single transaction."""
         with self.conn:
             self.conn.executemany(
                 _UPSERT_PROSPECT_SQL,
@@ -187,7 +187,7 @@ class Database:
     def get_messaged_prospects_for_followup(
         self, min_days: int, limit: int | None = None
     ) -> list[Prospect]:
-        """Prospects messagés il y a au moins min_days jours, pas encore relancés."""
+        """Prospects messaged at least min_days ago that have not been followed up."""
         query = """
             SELECT p.* FROM prospects p
             JOIN actions a ON a.prospect_id = p.id
@@ -205,7 +205,7 @@ class Database:
         return [self._row_to_prospect(r) for r in rows]
 
     def has_action(self, prospect_id: int, action_type: ActionType) -> bool:
-        """Vérifie si une action réussie de ce type existe pour ce prospect."""
+        """Check whether a successful action of this type exists for this prospect."""
         row = self.conn.execute(
             "SELECT 1 FROM actions"
             " WHERE prospect_id = ? AND action_type = ? AND success = 1 LIMIT 1",

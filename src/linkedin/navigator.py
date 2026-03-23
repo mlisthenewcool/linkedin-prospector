@@ -1,4 +1,4 @@
-"""Navigation vers les profils LinkedIn avec simulation humaine."""
+"""LinkedIn profile navigation with human behavior simulation."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ logger = structlog.get_logger()
 
 
 async def check_for_restriction(page: Page) -> bool:
-    """Détecte les pages de restriction/checkpoint LinkedIn.
+    """Detect LinkedIn restriction/checkpoint pages.
 
     Returns:
-        True si une restriction est détectée (la navigation doit s'arrêter).
+        True if a restriction is detected (navigation should stop).
     """
     url = page.url
     if any(pattern in url for pattern in ("/checkpoint/", "/checkpoint?", "/authwall")):
@@ -35,7 +35,7 @@ async def check_for_restriction(page: Page) -> bool:
 
 
 class NavigationResult:
-    """Résultat de la navigation vers un profil."""
+    """Result of navigating to a profile."""
 
     __slots__ = ("invalid_profile", "ok")
 
@@ -52,13 +52,13 @@ NAV_INVALID = NavigationResult(ok=False, invalid_profile=True)
 async def navigate_to_profile(
     page: Page, linkedin_url: str, *, light: bool = False
 ) -> NavigationResult:
-    """Navigue vers un profil LinkedIn avec simulation humaine.
+    """Navigate to a LinkedIn profile with human behavior simulation.
 
     Args:
-        light: Si True, utilise des délais réduits (pour sync).
+        light: If True, use shorter delays (for sync).
 
     Returns:
-        NavigationResult avec ok=True si succès, invalid_profile=True si profil cassé/supprimé.
+        NavigationResult with ok=True on success, invalid_profile=True if broken/deleted.
     """
     try:
         logger.debug("Navigation vers profil", url=linkedin_url)
@@ -71,7 +71,7 @@ async def navigate_to_profile(
             logger.warning("Profil introuvable ou supprimé", url=linkedin_url, redirect=page.url)
             return NAV_INVALID
 
-        # Délais adaptés selon le mode
+        # Adapted delays depending on mode
         read_time = (1.0, 2.0) if light else (2.0, 4.0)
         scroll_time = (0.5, 1.5) if light else (1.0, 3.0)
         end_time = (0.3, 0.8) if light else (0.5, 1.5)

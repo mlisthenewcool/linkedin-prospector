@@ -1,4 +1,4 @@
-"""Orchestration des pipelines de prospection."""
+"""Prospection pipeline orchestration."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ ActionFn = Callable[
 
 
 async def start_browser_with_session(config: Config) -> tuple[BrowserManager, Page]:
-    """Lance le navigateur et valide la session."""
+    """Launch the browser and validate the session."""
     browser = BrowserManager(config)
     page = await browser.start()
     if not await is_session_valid(page, config):
@@ -50,9 +50,9 @@ async def enrich_prospect(
     prospect: Prospect,
     db: Database,
 ) -> tuple[Prospect, dict[str, str | None]]:
-    """Parse le profil LinkedIn et met à jour les infos en base.
+    """Parse the LinkedIn profile and update info in the database.
 
-    Retourne le prospect enrichi (nouveau frozen) et le dict d'infos brutes.
+    Returns the enriched prospect (new frozen instance) and the raw info dict.
     """
     pid = prospect.require_id()
     info = await parse_profile(page)
@@ -83,10 +83,10 @@ async def run_prospect_pipeline(
     label: str,
     rate_limiter: RateLimiter,
 ) -> int:
-    """Pipeline générique pour connect/message/followup.
+    """Generic pipeline for connect/message/followup.
 
-    Gère : lancement navigateur, boucle sur prospects, enrichissement,
-    rate limiting, backoff sur erreurs, bruit comportemental, durée de session.
+    Handles: browser launch, prospect loop, enrichment,
+    rate limiting, error backoff, behavioral noise, session duration.
     """
     browser, page = await start_browser_with_session(config)
     templates = TemplateEngine(config)

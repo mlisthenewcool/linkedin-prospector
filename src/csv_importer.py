@@ -1,4 +1,4 @@
-"""Import CSV de prospects vers SQLite."""
+"""CSV prospect importer into SQLite."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from src.models import Prospect
 
 logger = structlog.get_logger()
 
-# Mapping des noms de colonnes CSV possibles vers nos champs
+# Mapping of possible CSV column names to internal field names
 COLUMN_MAP = {
     "linkedin_url": ["linkedin_url", "url", "profile_url", "linkedin", "profile"],
     "first_name": ["first_name", "firstname", "prenom", "prénom", "first"],
@@ -27,7 +27,7 @@ def _normalize_header(header: str) -> str:
 
 
 def _resolve_columns(headers: list[str]) -> dict[str, str | None]:
-    """Résout les colonnes CSV vers nos champs internes."""
+    """Resolve CSV column names to internal field names."""
     normalized = [_normalize_header(h) for h in headers]
     mapping: dict[str, str | None] = {}
     for field_name, aliases in COLUMN_MAP.items():
@@ -40,7 +40,7 @@ def _resolve_columns(headers: list[str]) -> dict[str, str | None]:
 
 
 def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
-    """Importe un CSV de prospects. Retourne (importés, ignorés/doublons)."""
+    """Import prospects from a CSV file. Returns (imported, skipped/duplicates)."""
     skipped = 0
 
     with open(csv_path, newline="", encoding="utf-8-sig") as f:
@@ -95,12 +95,12 @@ def import_csv(db: Database, csv_path: Path) -> tuple[int, int]:
 
 
 def _normalize_linkedin_url(url: str) -> str:
-    """Nettoie une URL LinkedIn pour avoir un format cohérent."""
+    """Normalize a LinkedIn URL to a consistent format."""
     url = url.rstrip("/")
-    # Retirer les paramètres de tracking
+    # Strip tracking parameters
     if "?" in url:
         url = url.split("?")[0]
-    # S'assurer que c'est bien une URL complète
+    # Ensure it's a full URL
     if not url.startswith("http"):
         url = "https://" + url
     return url

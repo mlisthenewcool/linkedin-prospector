@@ -1,4 +1,4 @@
-"""CLI principal : import, login, sync, connect, message, followup, export, list, status."""
+"""Main CLI: import, login, sync, connect, message, followup, export, list, status."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def _config(ctx: typer.Context) -> Config:
 
 
 def _resolve_status(status: str) -> ProspectStatus:
-    """Convertit un string en ProspectStatus ou exit avec erreur."""
+    """Convert a string to ProspectStatus or exit with an error."""
     try:
         return ProspectStatus(status)
     except ValueError:
@@ -50,14 +50,14 @@ def _resolve_status(status: str) -> ProspectStatus:
         raise typer.Exit(1) from None
 
 
-# --- Commandes ---
+# --- Commands ---
 
 
 @app.command("import")
 def cmd_import(
     csv_path: Annotated[Path, typer.Option("--csv", help="Chemin du CSV")],
 ) -> None:
-    """Importer des prospects depuis un CSV."""
+    """Import prospects from a CSV file."""
     with Database(DB_PATH) as db:
         imported, skipped = import_csv(db, csv_path)
         typer.echo(f"\nImport terminé : {imported} prospects importés, {skipped} ignorés")
@@ -70,7 +70,7 @@ def export(
     ),
     status: Annotated[str | None, typer.Option(help="Filtrer par statut")] = None,
 ) -> None:
-    """Exporter les prospects en CSV."""
+    """Export prospects to CSV."""
     with Database(DB_PATH) as db:
         if status:
             prospects = db.get_prospects_by_status(_resolve_status(status))
@@ -119,7 +119,7 @@ def export(
 
 @app.command()
 def login(ctx: typer.Context) -> None:
-    """Login manuel sur LinkedIn."""
+    """Manual LinkedIn login."""
     config = _config(ctx)
 
     async def _run() -> None:
@@ -148,7 +148,7 @@ def sync(
         bool, typer.Option("--all", help="Re-sync tous les prospects")
     ] = False,
 ) -> None:
-    """Synchroniser les statuts avec l'état réel LinkedIn."""
+    """Synchronize statuses with actual LinkedIn state."""
     config = _config(ctx)
 
     with Database(DB_PATH) as db:
@@ -230,7 +230,7 @@ def connect(
     ctx: typer.Context,
     limit: Annotated[int | None, typer.Option(help="Nombre max d'invitations")] = None,
 ) -> None:
-    """Envoyer des invitations aux prospects 'new'."""
+    """Send connection requests to 'new' prospects."""
     config = _config(ctx)
 
     with Database(DB_PATH) as db:
@@ -261,7 +261,7 @@ def message(
     ctx: typer.Context,
     limit: Annotated[int | None, typer.Option(help="Nombre max de messages")] = None,
 ) -> None:
-    """Envoyer les premiers messages aux prospects 'connected'."""
+    """Send first messages to 'connected' prospects."""
     config = _config(ctx)
 
     with Database(DB_PATH) as db:
@@ -292,7 +292,7 @@ def followup(
     ctx: typer.Context,
     limit: Annotated[int | None, typer.Option(help="Nombre max de relances")] = None,
 ) -> None:
-    """Envoyer des relances aux prospects 'messaged' sans réponse."""
+    """Send follow-ups to 'messaged' prospects with no reply."""
     config = _config(ctx)
 
     with Database(DB_PATH) as db:
@@ -325,7 +325,7 @@ def cmd_list(
     status: Annotated[str | None, typer.Option(help="Filtrer par statut")] = None,
     limit: Annotated[int, typer.Option(help="Nombre max à afficher")] = 20,
 ) -> None:
-    """Lister les prospects."""
+    """List prospects."""
     with Database(DB_PATH) as db:
         if status:
             prospects = db.get_prospects_by_status(_resolve_status(status), limit=limit)
@@ -353,7 +353,7 @@ def cmd_list(
 
 @app.command()
 def status(ctx: typer.Context) -> None:
-    """Afficher les statistiques."""
+    """Show prospection statistics."""
     config = _config(ctx)
     with Database(DB_PATH) as db:
         counts = db.count_by_status()
@@ -405,7 +405,7 @@ def callback(
     ctx: typer.Context,
     config: Annotated[Path | None, typer.Option(help="Chemin du fichier config.toml")] = None,
 ) -> None:
-    """Automatisation de prospection LinkedIn."""
+    """LinkedIn prospection automation."""
     loaded = load_config(config) if config else load_config()
     setup_logging()
     ctx.obj = loaded

@@ -1,4 +1,4 @@
-"""Gestion des conversations LinkedIn : ouverture, scan, envoi."""
+"""LinkedIn conversation management: opening, scanning, sending."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ logger = structlog.get_logger()
 
 
 async def _extract_profile_urn(page: Page) -> str | None:
-    """Extrait l'URN (ACoAA...) du prospect depuis la page de profil LinkedIn."""
+    """Extract the prospect's URN (ACoAA...) from the LinkedIn profile page."""
     return await page.evaluate(
         """() => {
         const links = document.querySelectorAll('a[href*="ACoAA"]');
@@ -29,11 +29,11 @@ async def _extract_profile_urn(page: Page) -> str | None:
 
 
 async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
-    """Ouvre la conversation avec le prospect sur la page de messagerie.
+    """Open the conversation with the prospect on the messaging page.
 
-    Extrait l'URN du profil depuis la page actuelle (doit être sur le profil),
-    puis navigue vers /messaging/thread/new/?recipient=<URN> pour garantir
-    l'ouverture de la bonne conversation.
+    Extracts the profile URN from the current page (must be on the profile),
+    then navigates to /messaging/thread/new/?recipient=<URN> to ensure
+    the correct conversation is opened.
     """
     urn = await _extract_profile_urn(page)
     if not urn:
@@ -45,7 +45,7 @@ async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
     await page.goto(url, wait_until="domcontentloaded", timeout=15_000)
     await short_delay(2.0, 4.0)
 
-    # Vérifier que la zone de texte est disponible
+    # Check that the text input area is available
     msg_box = page.locator(
         "div[role='textbox'][contenteditable='true'], div.msg-form__contenteditable"
     ).first
@@ -57,7 +57,7 @@ async def open_message_dialog(page: Page, prospect: Prospect) -> bool:
 
 
 async def type_and_send_message(page: Page, message: str, config: Config) -> bool:
-    """Tape un message caractère par caractère et l'envoie."""
+    """Type a message character by character and send it."""
     msg_box = page.locator(
         "div[role='textbox'][contenteditable='true'], div.msg-form__contenteditable"
     ).first
@@ -80,18 +80,18 @@ async def type_and_send_message(page: Page, message: str, config: Config) -> boo
         await simulate_reading(1.0, 2.0)
         return True
 
-    # Fallback : Enter
+    # Fallback: Enter
     await page.keyboard.press("Enter")
     await simulate_reading(1.0, 2.0)
     return True
 
 
 async def scan_conversation(page: Page, prospect: Prospect, config: Config) -> tuple[int, bool]:
-    """Scanne les messages de la conversation ouverte.
+    """Scan the messages in the open conversation.
 
-    Itère sur les ``li.msg-s-message-list__event`` et ne retient que ceux
-    qui contiennent un ``span.msg-s-message-group__name`` (= vrais messages),
-    ignorant les notifications système (« Vous êtes maintenant en contact »).
+    Iterates over ``li.msg-s-message-list__event`` and only keeps those
+    containing a ``span.msg-s-message-group__name`` (= actual messages),
+    ignoring system notifications ("You are now connected").
 
     Returns:
         (our_message_groups, prospect_replied)
@@ -109,7 +109,7 @@ async def scan_conversation(page: Page, prospect: Prospect, config: Config) -> t
         event = groups.nth(idx)
         sender_el = event.locator("span.msg-s-message-group__name").first
         if await sender_el.count() == 0:
-            continue  # Notification système ou élément non-message
+            continue  # System notification or non-message element
 
         sender = (await sender_el.text_content() or "").strip().lower()
         logger.debug("Événement conversation", index=idx + 1, sender=sender)

@@ -1,4 +1,4 @@
-"""Chargement de la configuration TOML."""
+"""TOML configuration loader."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = PROJECT_ROOT / "config" / "config.toml"
 
-# Chemins fixes (pas besoin de les configurer)
+# Fixed paths (no need to make these configurable)
 DATA_DIR = PROJECT_ROOT / "data"
 DB_PATH = DATA_DIR / "prospector.db"
 SESSION_STATE_PATH = DATA_DIR / "session" / "state.json"
@@ -66,7 +66,7 @@ LINKEDIN_USER_FILE = PROJECT_ROOT / "config" / "linkedin_user.toml"
 
 
 def _load_user_config(raw: dict[str, Any]) -> UserConfig:
-    """Charge le user config : config.toml > linkedin_user.toml auto-détecté."""
+    """Load user config with priority: config.toml > auto-detected linkedin_user.toml."""
     auto: dict[str, str] = {}
     if LINKEDIN_USER_FILE.exists():
         with open(LINKEDIN_USER_FILE, "rb") as f:
@@ -81,7 +81,7 @@ def _load_user_config(raw: dict[str, Any]) -> UserConfig:
 
 
 def load_config(path: Path = DEFAULT_CONFIG) -> Config:
-    """Charge la configuration depuis un fichier TOML."""
+    """Load configuration from a TOML file."""
     with open(path, "rb") as f:
         raw = tomllib.load(f)
 

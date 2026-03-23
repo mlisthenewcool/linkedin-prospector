@@ -1,4 +1,4 @@
-"""Dataclasses métier : Prospect et Action."""
+"""Domain dataclasses: Prospect and Action."""
 
 from __future__ import annotations
 
@@ -39,14 +39,14 @@ class Prospect:
     synced_at: datetime | None = None
 
     def require_id(self) -> int:
-        """Retourne l'ID ou lève ValueError si le prospect n'est pas en base."""
+        """Return the ID or raise ValueError if the prospect is not persisted."""
         if self.id is None:
             raise ValueError(f"Prospect sans ID : {self.linkedin_url}")
         return self.id
 
     @property
     def display_name(self) -> str:
-        """Nom affichable, fallback sur l'URL si aucun nom."""
+        """Display name, falling back to URL if no name is available."""
         parts = [p for p in (self.first_name, self.last_name) if p]
         return " ".join(parts) if parts else self.linkedin_url
 

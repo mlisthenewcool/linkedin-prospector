@@ -1,18 +1,18 @@
-"""Synchronisation des statuts prospects avec l'état réel LinkedIn.
+"""Prospect status synchronization with actual LinkedIn state.
 
-Approche hybride :
-  - La DB est la source de vérité pour les actions faites via l'outil.
-  - Le scan de conversation (li.msg-s-message-list__event) détecte les messages
-    manuels et les réponses du prospect, en filtrant les notifications système.
+Hybrid approach:
+  - The DB is the source of truth for actions performed via the tool.
+  - Conversation scanning (li.msg-s-message-list__event) detects manual
+    messages and prospect replies, filtering out system notifications.
 
-Logique :
-  (1) Pas dans le réseau (pas 1er degré) :
-      - Invitation en attente détectée     → CONNECTION_SENT
-      - Sinon                              → NEW
-  (2) Dans le réseau (1er degré) :
-      - Réponse du prospect détectée       → REPLIED
-      - On a messagé (DB ou conversation)  → MESSAGED / FOLLOWED_UP
-      - Rien                               → CONNECTED
+Logic:
+  (1) Not in network (not 1st degree):
+      - Pending invitation detected       → CONNECTION_SENT
+      - Otherwise                          → NEW
+  (2) In network (1st degree):
+      - Prospect reply detected            → REPLIED
+      - We messaged (DB or conversation)   → MESSAGED / FOLLOWED_UP
+      - Nothing                            → CONNECTED
 """
 
 from __future__ import annotations
@@ -38,15 +38,15 @@ async def sync_prospect(
     config: Config,
     info: dict[str, str | None],
 ) -> str | None:
-    """Détermine le vrai statut LinkedIn et met à jour la base.
+    """Determine the real LinkedIn status and update the database.
 
     Returns:
-        Le nouveau statut si changé, None si inchangé.
+        The new status if changed, None if unchanged.
     """
     pid = prospect.require_id()
     connection = info.get("connection_degree") or ""
 
-    # (1) Pas dans le réseau
+    # (1) Not in network
     if connection != "1er":
         pending = info.get("pending_invitation") is not None
         if pending:
@@ -58,19 +58,19 @@ async def sync_prospect(
             return ProspectStatus.NEW.value
         return None
 
-    # (2) Dans le réseau — vérifier DB puis conversation
+    # (2) In network — check DB then conversation
 
-    # Ce qu'on sait via la DB (actions de l'outil)
+    # What we know from DB (tool actions)
     has_message = db.has_action(pid, ActionType.MESSAGE)
     has_followup = db.has_action(pid, ActionType.FOLLOWUP)
 
-    # Scanner la conversation LinkedIn pour détecter réponses + messages manuels
+    # Scan LinkedIn conversation to detect replies + manual messages
     our_groups = 0
     prospect_replied = False
     if await open_message_dialog(page, prospect):
         our_groups, prospect_replied = await scan_conversation(page, prospect, config)
 
-    # Déterminer si on a messagé (outil OU manuellement)
+    # Determine if we messaged (tool OR manually)
     we_messaged = has_message or has_followup
     if not we_messaged and our_groups > 0:
         we_messaged = True
@@ -80,7 +80,7 @@ async def sync_prospect(
             groups=our_groups,
         )
 
-    # Résoudre le statut
+    # Resolve status
     if prospect_replied:
         new_status = ProspectStatus.REPLIED
     elif has_followup:

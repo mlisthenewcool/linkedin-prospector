@@ -1,4 +1,4 @@
-"""Lancement Playwright + stealth + session persistante."""
+"""Playwright browser launcher with stealth and persistent session."""
 
 from __future__ import annotations
 
@@ -25,14 +25,14 @@ class BrowserManager:
         self._max_session_minutes: int = random.randint(45, 90)
 
     async def start(self) -> Page:
-        """Lance le navigateur avec stealth et session persistante."""
+        """Launch the browser with stealth and persistent session."""
         self._started_at = datetime.now(UTC)
         self._playwright = await async_playwright().start()
 
         session_path = SESSION_STATE_PATH
         session_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Viewport randomisé pour éviter le fingerprinting
+        # Randomized viewport to avoid fingerprinting
         width = 1366 + random.randint(-50, 50)
         height = 768 + random.randint(-30, 30)
 
@@ -45,7 +45,7 @@ class BrowserManager:
             ],
         )
 
-        # Charger la session existante si disponible
+        # Load existing session if available
         storage_state = str(session_path) if session_path.exists() else None
 
         stealth = Stealth(
@@ -77,21 +77,21 @@ class BrowserManager:
 
     @property
     def session_expired(self) -> bool:
-        """Vérifie si la durée maximale de session est atteinte."""
+        """Check whether the maximum session duration has been reached."""
         if self._started_at is None:
             return False
         elapsed = (datetime.now(UTC) - self._started_at).total_seconds() / 60
         return elapsed >= self._max_session_minutes
 
     async def save_session(self) -> None:
-        """Sauvegarde les cookies et le state du navigateur."""
+        """Save browser cookies and state to disk."""
         if self._context:
             session_path = SESSION_STATE_PATH
             await self._context.storage_state(path=str(session_path))
             logger.info("Session sauvegardée", path=str(session_path))
 
     async def close(self) -> None:
-        """Ferme proprement le navigateur en sauvegardant la session."""
+        """Gracefully close the browser after saving the session."""
         try:
             await self.save_session()
         except Exception as e:

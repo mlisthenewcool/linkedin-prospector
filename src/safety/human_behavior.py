@@ -1,4 +1,4 @@
-"""Simulation de comportement humain : délais, frappe, scroll, souris, bruit."""
+"""Human behavior simulation: delays, typing, scrolling, mouse movement, noise."""
 
 from __future__ import annotations
 
@@ -15,19 +15,19 @@ logger = structlog.get_logger()
 
 
 async def random_delay(config: Config) -> None:
-    """Attend un délai aléatoire entre les actions."""
+    """Wait a random delay between actions."""
     delay = random.uniform(config.delays.min_delay, config.delays.max_delay)
     logger.debug("Délai aléatoire", seconds=round(delay, 1))
     await asyncio.sleep(delay)
 
 
 async def short_delay(min_s: float = 1.0, max_s: float = 3.0) -> None:
-    """Petit délai entre sous-actions."""
+    """Short delay between sub-actions."""
     await asyncio.sleep(random.uniform(min_s, max_s))
 
 
 async def human_type_in_focused(page: Page, text: str, config: Config) -> None:
-    """Tape du texte dans l'élément actuellement focus."""
+    """Type text into the currently focused element with human-like delays."""
     for char in text:
         await page.keyboard.type(char, delay=0)
         delay_ms = random.randint(
@@ -41,7 +41,7 @@ async def human_type_in_focused(page: Page, text: str, config: Config) -> None:
 
 
 async def human_scroll(page: Page, direction: Literal["up", "down"] = "down") -> None:
-    """Scroll naturel avec variation et parfois retour en arrière."""
+    """Natural scroll with variation and occasional reverse scrolls."""
     steps = random.randint(2, 5)
 
     for _ in range(steps):
@@ -49,7 +49,7 @@ async def human_scroll(page: Page, direction: Literal["up", "down"] = "down") ->
         if direction == "up":
             delta = -delta
 
-        # Parfois un petit retour en arrière
+        # Occasional small reverse scroll
         if random.random() < 0.15:
             await page.mouse.wheel(0, -random.randint(50, 150))
             await asyncio.sleep(random.uniform(0.3, 0.8))
@@ -59,7 +59,7 @@ async def human_scroll(page: Page, direction: Literal["up", "down"] = "down") ->
 
 
 async def random_mouse_move(page: Page) -> None:
-    """Déplace la souris aléatoirement pour simuler un humain."""
+    """Move the mouse randomly to simulate human behavior."""
     x = random.randint(100, 1200)
     y = random.randint(100, 600)
     await page.mouse.move(x, y)
@@ -67,12 +67,12 @@ async def random_mouse_move(page: Page) -> None:
 
 
 async def simulate_reading(min_s: float = 2.0, max_s: float = 6.0) -> None:
-    """Simule le temps de lecture d'une page."""
+    """Simulate page reading time."""
     await asyncio.sleep(random.uniform(min_s, max_s))
 
 
 async def maybe_visit_feed(page: Page, config: Config, probability: float = 0.1) -> None:
-    """Visite occasionnelle du feed pour simuler un comportement naturel."""
+    """Occasionally visit the feed to simulate natural browsing behavior."""
     if random.random() >= probability:
         return
     logger.debug("Bruit comportemental : visite du feed")

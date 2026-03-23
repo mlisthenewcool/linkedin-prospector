@@ -1,4 +1,4 @@
-"""Moteur Jinja2 pour les messages personnalisés."""
+"""Jinja2 template engine for personalized messages."""
 
 from __future__ import annotations
 
@@ -18,14 +18,14 @@ class TemplateEngine:
             raise FileNotFoundError(f"Dossier templates introuvable : {templates_dir}")
         self.env = Environment(
             loader=FileSystemLoader(str(templates_dir)),
-            autoescape=False,  # noqa: S701 — templates plain text, pas HTML
+            autoescape=False,  # noqa: S701 — plain text templates, not HTML
             trim_blocks=True,
             lstrip_blocks=True,
         )
 
     def render(self, template_name: str, **context) -> str:
-        """Rend un template avec le contexte donné."""
-        # Ajouter les infos utilisateur au contexte
+        """Render a template with the given context."""
+        # Inject user info into the context
         context.setdefault("user_first_name", self.config.user.first_name)
         context.setdefault("user_last_name", self.config.user.last_name)
         context.setdefault("user_title", self.config.user.title)

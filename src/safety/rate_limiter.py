@@ -1,4 +1,4 @@
-"""Limites journalières via compteurs DB."""
+"""Daily rate limiting via database counters."""
 
 from __future__ import annotations
 
@@ -25,13 +25,13 @@ class RateLimiter:
         self._daily_counts: dict[ActionType, int] = {}
 
     def _get_daily_count(self, action_type: ActionType) -> int:
-        """Retourne le compteur journalier, avec cache en mémoire."""
+        """Return the daily counter, with in-memory cache."""
         if action_type not in self._daily_counts:
             self._daily_counts[action_type] = self.db.get_daily_count(action_type)
         return self._daily_counts[action_type]
 
     def can_perform(self, action_type: ActionType) -> bool:
-        """Vérifie si l'action est autorisée (limites journalières + session)."""
+        """Check whether the action is allowed (daily + session limits)."""
         if self.session_action_count >= self.config.limits.actions_per_session:
             logger.warning(
                 "Limite session atteinte",
@@ -56,13 +56,13 @@ class RateLimiter:
         return True
 
     def record_action(self, action_type: ActionType) -> None:
-        """Enregistre une action effectuée."""
+        """Record a performed action."""
         new_count = self.db.increment_daily_counter(action_type)
         self._daily_counts[action_type] = new_count
         self.session_action_count += 1
 
     def remaining(self, action_type: ActionType) -> int:
-        """Nombre d'actions restantes pour ce type aujourd'hui."""
+        """Number of remaining actions of this type for today."""
         limit_attr = ACTION_LIMIT_MAP.get(action_type)
         if not limit_attr:
             return 999

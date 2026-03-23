@@ -1,4 +1,4 @@
-"""Login manuel, validation de session LinkedIn, et sauvegarde du profil utilisateur."""
+"""Manual login, LinkedIn session validation, and user profile detection."""
 
 from __future__ import annotations
 
@@ -16,15 +16,15 @@ LOGIN_URL = "https://www.linkedin.com/login"
 
 
 def _escape_toml_string(s: str) -> str:
-    """Échappe une valeur pour inclusion dans un string TOML entre guillemets."""
+    """Escape a value for inclusion in a quoted TOML string."""
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
 def save_linkedin_user(first_name: str, last_name: str, title: str) -> None:
-    """Sauvegarde les infos user détectées depuis LinkedIn."""
+    """Save user info auto-detected from LinkedIn to a TOML file."""
     LINKEDIN_USER_FILE.parent.mkdir(parents=True, exist_ok=True)
     content = (
-        f"# Auto-détecté depuis LinkedIn — ne pas modifier manuellement\n"
+        f"# Auto-detected from LinkedIn — do not edit manually\n"
         f'first_name = "{_escape_toml_string(first_name)}"\n'
         f'last_name = "{_escape_toml_string(last_name)}"\n'
         f'title = "{_escape_toml_string(title)}"\n'
@@ -33,7 +33,7 @@ def save_linkedin_user(first_name: str, last_name: str, title: str) -> None:
 
 
 async def manual_login(page: Page, config: Config) -> bool:
-    """Ouvre LinkedIn pour un login manuel. Attend que l'utilisateur se connecte."""
+    """Open LinkedIn for manual login. Waits for the user to complete sign-in."""
     logger.info("Ouverture de LinkedIn pour login manuel...")
     await page.goto(LOGIN_URL, wait_until="domcontentloaded")
 
@@ -51,7 +51,7 @@ async def manual_login(page: Page, config: Config) -> bool:
 
 
 async def _detect_linkedin_user(page: Page) -> None:
-    """Détecte le nom et titre du user connecté depuis le feed LinkedIn."""
+    """Detect the connected user's name and title from the LinkedIn feed."""
     try:
         nav_photo = page.locator(
             "img.global-nav__me-photo, button[class*='global-nav__primary-link'] img"
@@ -75,7 +75,7 @@ async def _detect_linkedin_user(page: Page) -> None:
 
 
 async def is_session_valid(page: Page, config: Config) -> bool:
-    """Vérifie si la session sauvegardée est encore valide."""
+    """Check whether the saved session is still valid."""
     try:
         await page.goto(FEED_URL, wait_until="domcontentloaded", timeout=15_000)
         await asyncio.sleep(2)

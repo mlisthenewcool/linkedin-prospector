@@ -1,4 +1,4 @@
-"""Extraction des informations de profil LinkedIn depuis la page."""
+"""LinkedIn profile information extraction from the page."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ logger = structlog.get_logger()
 
 
 async def parse_profile(page: Page) -> dict[str, str | None]:
-    """Extrait les infos principales du profil LinkedIn actuellement affiché."""
+    """Extract key information from the currently displayed LinkedIn profile."""
     info: dict[str, str | None] = {
         "first_name": None,
         "last_name": None,
@@ -23,7 +23,7 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
     }
 
     try:
-        # Nom complet
+        # Full name
         name_el = page.locator("h1.text-heading-xlarge, h1.inline.t-24")
         if await name_el.count() > 0:
             full_name = (await name_el.first.text_content() or "").strip()
@@ -32,12 +32,12 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
                 info["first_name"] = parts[0]
                 info["last_name"] = parts[1] if len(parts) > 1 else None
 
-        # Headline (court résumé sous le nom)
+        # Headline (short summary below the name)
         headline_el = page.locator("div.text-body-medium.break-words, div.text-body-medium")
         if await headline_el.count() > 0:
             info["headline"] = (await headline_el.first.text_content() or "").strip() or None
 
-        # Section Infos / About
+        # About section
         about_el = page.locator(
             "div.inline-show-more-text--is-collapsed span[aria-hidden='true'], "
             "div.inline-show-more-text span[aria-hidden='true']"
@@ -45,14 +45,14 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
         if await about_el.count() > 0:
             info["about"] = (await about_el.first.text_content() or "").strip() or None
 
-        # Entreprise actuelle (bouton dans le top card)
+        # Current company (button in the top card)
         company_el = page.locator(
             "button[aria-label*='Entreprise actuelle'], button[aria-label*='Current company']"
         )
         if await company_el.count() > 0:
             info["company"] = (await company_el.first.text_content() or "").strip() or None
 
-        # Degré de connexion
+        # Connection degree
         degree_el = page.locator(
             "span.dist-value, "
             "span.text-body-small:has-text('1er'), "
@@ -61,12 +61,12 @@ async def parse_profile(page: Page) -> dict[str, str | None]:
         )
         if await degree_el.count() > 0:
             degree_text = (await degree_el.first.text_content() or "").strip()
-            # Extraire juste le degré (1er, 2e, 3e+)
+            # Extract just the degree (1er, 2e, 3e+)
             match = re.search(r"(1er|2e|3e\+?)", degree_text)
             if match:
                 info["connection_degree"] = match.group(1)
 
-        # Invitation en attente
+        # Pending invitation
         pending_el = page.locator(
             "button:has-text('En attente'), "
             "button:has-text('Pending'), "

@@ -1,4 +1,4 @@
-"""Envoi de demandes de connexion LinkedIn (sans note)."""
+"""LinkedIn connection request sending (without note)."""
 
 from __future__ import annotations
 
@@ -23,14 +23,14 @@ async def send_connection_request(
     rate_limiter: RateLimiter,
     _templates: TemplateEngine,
 ) -> bool:
-    """Envoie une demande de connexion sans note à un prospect."""
+    """Send a connection request without a note to a prospect."""
     pid = prospect.require_id()
     if not rate_limiter.can_perform(ActionType.INVITATION):
         logger.warning("Rate limit atteint pour les invitations")
         return False
 
     try:
-        # Chercher le bouton "Se connecter" / "Connect"
+        # Look for the "Se connecter" / "Connect" button
         connect_btn = page.locator(
             "button:has-text('Se connecter'), "
             "button:has-text('Connect'), "
@@ -39,7 +39,7 @@ async def send_connection_request(
         ).first
 
         if await connect_btn.count() == 0:
-            # Peut-être dans le menu "Plus" / "More"
+            # May be inside the "Plus" / "More" menu
             more_btn = page.locator(
                 "button:has-text('Plus'), button:has-text('More'), button[aria-label*='Plus d']"
             ).first
@@ -61,7 +61,7 @@ async def send_connection_request(
         await connect_btn.click()
         await short_delay(1.0, 2.0)
 
-        # Envoyer directement sans note — cliquer "Envoyer" si modal apparaît
+        # Send directly without a note — click "Envoyer" if modal appears
         send_btn = page.locator(
             "button:has-text('Envoyer'), button:has-text('Send'), "
             "button[aria-label*='Envoyer'], button[aria-label*='Send now']"

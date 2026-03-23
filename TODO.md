@@ -1,35 +1,39 @@
-<!-- ===== Conventions de formatage =====
- - Sections       : Maintenant / Ensuite / Plus tard / Terminé
- - Format ouvert  : - [ ] [Domaine] Description (forme impérative)
- - Format terminé : - [x] [Domaine] _(YYYY-MM-DD)_ Description
- - Tri ouvert     : alphabétique par domaine, puis par description
- - Tri terminé    : date décroissante (plus récent en premier)
+<!-- ===== Formatting conventions =====
+ - Sections       : Now / Next / Later / Done
+ - Open format    : - [ ] [Domain] Description (imperative form)
+ - Done format    : - [x] [Domain] _(YYYY-MM-DD)_ Description
+ - Open sorting   : alphabetical by domain, then by description
+ - Done sorting   : descending date (most recent first)
  ===== -->
 
 # TODO
 
-## Maintenant
+## Now
 
-- [ ] [Config] Baisser les limites par défaut
-- [ ] [Tooling] Comparer prek.toml avec celui de l'autre projet
+- [ ] [Config] Lower the default limits
+- [ ] [Tooling] Compare prek.toml with the other project's version
 
-## Ensuite
+## Next
 
-- [ ] [CSV] Vérifier que l'import fonctionne sans nom d'entreprise
-- [ ] [CLI] Ajouter la recherche de recruteurs par nom d'entreprise (paramètre)
+- [ ] [CSV] Verify that import works without a company name
+- [ ] [CLI] Add recruiter search by company name (parameter)
 
-## Plus tard
+## Later
 
-- [ ] [Prospection] Implémenter la prospection "froide" (message générique, pas d'offre trouvée)
-- [ ] [Prospection] Implémenter la prospection "ciblée" (CSV entreprise + URL offre, tagging recruteurs, message personnalisé)
+- [ ] [Prospection] Implement "cold" prospection (generic message, no job offer found)
+- [ ] [Prospection] Implement "targeted" prospection (company CSV + job URL, recruiter tagging, custom message)
 
-## Terminé
+## Done
 
-- [x] [Models] _(2026-03-22)_ Adopter None au lieu de chaînes vides pour les valeurs nullables
-- [x] [Models] _(2026-03-22)_ Ajouter require_id() et display_name sur Prospect
-- [x] [Models] _(2026-03-22)_ Passer les dataclass en frozen=True, slots=True
-- [x] [Models] _(2026-03-22)_ Analyser le retrait de None après sync (conclusion : about/company/headline légitimement None)
-- [x] [Logs] _(2026-03-22)_ Migrer logging vers structlog
-- [x] [Projet] _(2026-03-22)_ Regrouper config, templates et linkedin_user.toml dans config/
-- [x] [Projet] _(2026-03-22)_ Déplacer les CSV d'import dans examples/
-- [x] [Git] _(2026-03-22)_ Compléter le .gitignore
+- [x] [Config] _(2026-03-23)_ Remove [paths] section, hardcode as constants
+- [x] [Code] _(2026-03-23)_ Remove dead code (close_message_dialog, unused params)
+- [x] [Git] _(2026-03-23)_ Purge sensitive prospect data from git history
+- [x] [Project] _(2026-03-23)_ Restructure project layout (config/, data/)
+- [x] [Git] _(2026-03-22)_ Expand .gitignore
+- [x] [Logs] _(2026-03-22)_ Migrate logging to structlog
+- [x] [Models] _(2026-03-22)_ Adopt None instead of empty strings for nullable values
+- [x] [Models] _(2026-03-22)_ Add require_id() and display_name on Prospect
+- [x] [Models] _(2026-03-22)_ Switch dataclasses to frozen=True, slots=True
+- [x] [Models] _(2026-03-22)_ Analyze removing None after sync (conclusion: about/company/headline legitimately None)
+- [x] [Project] _(2026-03-22)_ Group config, templates and linkedin_user.toml into config/
+- [x] [Project] _(2026-03-22)_ Move import CSVs to examples/

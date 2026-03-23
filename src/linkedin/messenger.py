@@ -1,4 +1,4 @@
-"""Envoi de messages et relances + détection de réponses."""
+"""Message sending, follow-ups and reply detection."""
 
 from __future__ import annotations
 
@@ -27,13 +27,13 @@ async def send_first_message(
     rate_limiter: RateLimiter,
     templates: TemplateEngine,
 ) -> bool:
-    """Envoie le premier message de prospection à un prospect connecté."""
+    """Send the first prospection message to a connected prospect."""
     pid = prospect.require_id()
     if not rate_limiter.can_perform(ActionType.MESSAGE):
         logger.warning("Rate limit atteint pour les messages")
         return False
 
-    # Vérifier en base si on a déjà envoyé un message via l'outil
+    # Check in DB if we already sent a message via the tool
     if db.has_action(pid, ActionType.MESSAGE):
         logger.info("Message déjà envoyé — skip", prospect=prospect.display_name)
         db.update_prospect_status(pid, ProspectStatus.MESSAGED)
@@ -43,7 +43,7 @@ async def send_first_message(
         if not await open_message_dialog(page, prospect):
             return False
 
-        # Scanner la conversation pour détecter réponses et messages existants
+        # Scan conversation to detect replies and existing messages
         our_groups, prospect_replied = await scan_conversation(page, prospect, config)
 
         if prospect_replied:
@@ -102,7 +102,7 @@ async def send_followup(
     rate_limiter: RateLimiter,
     templates: TemplateEngine,
 ) -> bool:
-    """Envoie une relance à un prospect déjà messagé."""
+    """Send a follow-up to a prospect already messaged."""
     pid = prospect.require_id()
     if not rate_limiter.can_perform(ActionType.FOLLOWUP):
         logger.warning("Rate limit atteint pour les relances")
@@ -112,7 +112,7 @@ async def send_followup(
         if not await open_message_dialog(page, prospect):
             return False
 
-        # Vérifier s'il a répondu entre-temps
+        # Check if the prospect replied in the meantime
         _our_groups, prospect_replied = await scan_conversation(page, prospect, config)
 
         if prospect_replied:
